@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "drawflow": "^0.0.60",
     "eslint": "^9.31.0",
     "jsdoc": "^4.0.4"
   },

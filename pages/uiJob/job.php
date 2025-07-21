@@ -165,7 +165,9 @@
             </article>
         </dialog>
 
-        <script src="pages/uiJob/whiteboard.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css" />
+        <script src="pages/uiJob/whiteboard.drawflow.init.js"></script>
 
         <?php
     } else {
