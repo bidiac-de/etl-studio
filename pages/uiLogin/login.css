@@ -1,0 +1,23 @@
+#loginContainerParent {
+    min-height: 100vh; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#loginContainerChild {
+    max-width: 550px; 
+    background-color: rgba(0, 0, 0, 0.15); 
+    padding: 50px 120px 30px 120px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='light'] #loginContainerChild {
+    background-color: rgba(0, 0, 0, 0.02); 
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#btnLogin {
+    width: 100%;
+}
