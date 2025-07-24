@@ -4,12 +4,15 @@
     require_once("./inc/includes.php");
 
     session_start();
-    if (isset($_POST["username"]) && isset($_POST["password"])) {
+    
+    // Nur Session setzen, wenn Auth-Server erfolgreich war
+    if (isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["auth_success"])) {
         $_SESSION["username"] = $_POST["username"];
         $_SESSION["password"] = $_POST["password"];
-        $_SESSION["fullname"] = "Sven König";
+        $_SESSION["fullname"] = $_POST["fullname"] ?? "Sven König";
         header("Refresh:0");
     }
+    
     if (isset($_GET["logout"])) {
         session_destroy();
         header("refresh:0; url=./");
