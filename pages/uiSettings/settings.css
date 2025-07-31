@@ -1,0 +1,9 @@
+section {
+    margin-bottom: 30px;
+}
+
+.settingsFieldset * {
+    display: flex;
+    align-items: center;
+    margin: 0px 0px 0px 0px !important;
+}

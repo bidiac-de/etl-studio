@@ -1,0 +1,148 @@
+body {
+    overflow: hidden;
+}
+
+#btnDelete {
+    color: var(--pico-color-red-400);
+    border-color: var(--pico-color-red-400);
+}
+
+.connectionLamp {
+    margin-left: 20px;
+    margin-right: 10px;
+    width: 12px;
+    height: 12px;
+    margin-top: 6px;
+    border-radius: 12px;
+    background: var(--pico-color-green-650);
+    float: left;
+}
+
+#componentsTable td:last-child {
+    text-align: right;
+}
+
+
+#whiteboard {
+    width: 130vw;
+    height: 130vh;
+    background: conic-gradient(from 90deg at 1px 1px, #fff 90deg, var(--pico-color-slate-50) 0deg) -1px -1px/20px 20px;
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    /*border: 1px solid var(--pico-color-slate-350);
+    border-radius: 20px;*/
+}
+
+#whiteboard:active {
+    cursor: grabbing;
+}
+
+[data-theme='dark'] #whiteboard {
+    background: conic-gradient(from 90deg at 1px 1px, var(--pico-color-slate-900) 90deg, var(--pico-color-slate-850) 0deg) -1px -1px/20px 20px;
+}
+
+#whiteboard-container{
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    overflow: hidden;
+}
+
+#zoomNeutral, #zoomDecrement, #zoomIncrement {
+    cursor: pointer;
+}
+
+#zoomNeutral:hover, #zoomDecrement:hover, #zoomIncrement:hover {
+    color: var(--pico-color-slate-750);
+}
+
+#zoomText {
+    display: inline-block;
+    min-width: 45px;
+    text-align: center;
+}
+
+#console {
+    position: absolute;
+    left: 0;
+    bottom: 25px;
+    width: 100vw;
+    height: 25vh;
+    background: var(--pico-background-color);
+    border-top: 1px solid var(--pico-color-slate-100);
+    z-index: 99;
+    color: var(--pico-color-slate-600);
+    display: none;
+}
+
+[data-theme='dark'] #console {
+    border-top: 1px solid var(--pico-color-slate-900);
+}
+
+#btnCloseConsole {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+}
+
+#btnCloseConsole:hover {
+    color: var(--pico-color);
+}
+
+#console .title {
+    position: absolute;
+    left: 15px;
+    top: 5px;
+    height: 16px;
+    line-height: 16px;
+}
+
+#console .title span {
+    margin-right: 5px;
+}
+
+#consoleText {
+    font-family: monospace;
+    font-size: small;
+    position: absolute;
+    left: 0;
+    top: 26px;
+    bottom: -15px;
+    resize: none;
+    color: var(--pico-color-slate-500);
+}
+
+#footer .leftFooter {
+    margin-left: 5px;
+}
+
+#footer .leftFooter span {
+    margin-left: 5px;
+}
+
+#footer .leftFooter .btn {
+    cursor: pointer;
+}
+
+#footer .leftFooter .btn:hover {
+    color: var(--pico-color-slate-750);
+}
+
+#btnConfirmDelete {
+    background: var(--pico-color-red-400);
+}
+
+#jobProgress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 99;
+    display: none;
+}

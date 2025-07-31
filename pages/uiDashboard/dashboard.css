@@ -1,0 +1,8 @@
+#jobTableBody tr {
+    cursor: pointer;
+}
+
+.tableFit {
+    width: 0; 
+    min-width: fit-content;
+}
