@@ -1,7 +1,6 @@
 <?php
 
-    require_once("./config/config.php");
-    require_once("./inc/includes.php");
+    require_once("inc/includes.php");
 
     session_start();
     if (isset($_POST["username"]) && isset($_POST["password"])) {
@@ -35,19 +34,25 @@
     <body>
 
         <?php
-            
-            if(isset($_SESSION["username"]) && isset($_SESSION["password"])) {
-                if (isset($_GET["job"])) {
-                    $jobID = $_GET["job"];
-                    include("./pages/uiJob/job.php");
-                } else if (isset($_GET["settings"])) {
-                    include("./pages/uiSettings/settings.php");
+
+            if (file_exists("config.json")) {
+                if(isset($_SESSION["username"]) && isset($_SESSION["password"])) {
+                    if (isset($_GET["job"])) {
+                        $jobID = $_GET["job"];
+                        include("./pages/uiJob/job.php");
+                    } else if (isset($_GET["settings"])) {
+                        include("./pages/uiSettings/settings.php");
+                    } else {
+                        include("./pages/uiDashboard/dashboard.php");
+                    }
                 } else {
-                    include("./pages/uiDashboard/dashboard.php");
+                    include("./pages/uiLogin/login.php");
                 }
             } else {
-                include("./pages/uiLogin/login.php");
+                include("./pages/uiSetup/setup.php");
             }
+            
+            
         ?>
 
     </body>

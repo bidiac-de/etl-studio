@@ -1,0 +1,28 @@
+#setupContainerChild {
+    margin-top: 50px;
+    max-width: 550px; 
+    background-color: rgba(0, 0, 0, 0.15); 
+    padding: 20px 40px 40px 40px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='light'] #setupContainerChild {
+    background-color: rgba(0, 0, 0, 0.02); 
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#btnNext {
+    width: 100%;
+}
+
+.setupFieldset div *, .setupFieldset div:first-child {
+    display: flex;
+    align-items: center;
+    margin: 0px 0px 0px 0px !important;
+}
+
+section {
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
