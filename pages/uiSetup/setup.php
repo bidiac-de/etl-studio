@@ -49,7 +49,7 @@
                 </div>
             </fieldset>
         </section>
-        <hr>
+        <!--<hr>
         <section>
             <h3><i class="fa-solid fa-server" style="margin-right: 5px;"></i> Execution Server (optional)</h3>
             <fieldset class="grid setupFieldset">
@@ -70,7 +70,7 @@
                     <small id="key-validationtext"></small>
                 </div>
             </fieldset>
-        </section>
+        </section>-->
         <hr>
     </form>
     <br>

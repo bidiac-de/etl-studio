@@ -6,5 +6,6 @@
     require_once("inc/setup.php");
     require_once("inc/database.php");
     require_once("inc/login.php");
+    require_once("inc/server.php");
 
 ?>

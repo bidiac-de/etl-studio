@@ -64,7 +64,6 @@ function validatePassword() {
 
 
 $("#btnNext").click(function() {
-
     Promise.all([
         validateSqlitefilepath(),
         validateUsername(),
@@ -73,10 +72,14 @@ $("#btnNext").click(function() {
         if(res.every(function(value) {
             return value == true;
         })) {
-            $("form").submit();
+            $("#btnNext").html("Finish");
+            $("#btnNext").prop("disabled", true);
+            $("#btnNext").attr("aria-busy", "true");
+            setTimeout(function() {
+                $("form").submit();
+            }, 2000);
         }
     });
-
 });
 
 
