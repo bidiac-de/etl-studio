@@ -62,23 +62,6 @@ function validatePassword() {
     });
 }
 
-function validateKey(fullValidation = false) {
-    return new Promise(function(resolve, reject) {
-        if ($("#key").val() == "") {
-            validationErrorText("key", "Can't be empty!");
-            resolve(false);
-        } else {
-            if (fullValidation) {
-                resolve(false);
-            } else {
-                validationOk("key");
-                resolve(true);
-            }
-            
-        }
-    });
-}
-
 
 $("#btnNext").click(function() {
 
@@ -86,9 +69,12 @@ $("#btnNext").click(function() {
         validateSqlitefilepath(),
         validateUsername(),
         validatePassword(),
-        validateKey(true)
     ]).then(function(res) {
-        console.log(res);
+        if(res.every(function(value) {
+            return value == true;
+        })) {
+            $("form").submit();
+        }
     });
 
 });
@@ -98,4 +84,3 @@ $("#sqlitefilepath").on("keyup change", validateSqlitefilepath);
 $("#username").on("keyup change", validateUsername);
 $("#password").on("keyup change", validatePassword);
 $("#passwordRepeat").on("keyup change", validatePassword);
-$("#key").on("keyup change", validateKey);

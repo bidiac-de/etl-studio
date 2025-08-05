@@ -19,8 +19,4 @@
         exit();
     }
 
-    if (isset($_POST["host"])) {
-        
-    }
-
 ?>

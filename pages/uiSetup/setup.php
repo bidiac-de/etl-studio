@@ -51,7 +51,7 @@
         </section>
         <hr>
         <section>
-            <h3><i class="fa-solid fa-server" style="margin-right: 5px;"></i> Execution Server</h3>
+            <h3><i class="fa-solid fa-server" style="margin-right: 5px;"></i> Execution Server (optional)</h3>
             <fieldset class="grid setupFieldset">
                 <div>
                     <label for="host">URL</label>
@@ -74,6 +74,6 @@
         <hr>
     </form>
     <br>
-    <button id="btnNext">Next <i class="fa-solid fa-arrow-right"></i></button>
+    <button id="btnNext">Finish <i class="fa-solid fa-flag-checkered"></i></button>
 </main>
 <script src="pages/uiSetup/setup.js"></script>

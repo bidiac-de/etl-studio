@@ -1,19 +1,5 @@
 <?php
-
     require_once("inc/includes.php");
-
-    session_start();
-    if (isset($_POST["username"]) && isset($_POST["password"])) {
-        $_SESSION["username"] = $_POST["username"];
-        $_SESSION["password"] = $_POST["password"];
-        $_SESSION["fullname"] = "Sven König";
-        header("Refresh:0");
-    }
-    if (isset($_GET["logout"])) {
-        session_destroy();
-        header("refresh:0; url=./");
-    }
-
 ?>
 <!doctype html>
 <html lang="en" data-theme="light">
@@ -23,9 +9,9 @@
         <meta name="color-scheme" content="light dark">
         <link rel="stylesheet" href="./libs/pico-main/css/pico.min.css">
         <link rel="stylesheet" href="./libs/pico-main/css/pico.colors.min.css">
-        <link href="./libs/fontawesome-free-6.7.2-web/css/fontawesome.css" rel="stylesheet" />
-        <link href="./libs/fontawesome-free-6.7.2-web/css/brands.css" rel="stylesheet" />
-        <link href="./libs/fontawesome-free-6.7.2-web/css/solid.css" rel="stylesheet" />
+        <link href="./libs/fontawesome-free-7.0.0-web/css/fontawesome.min.css" rel="stylesheet" />
+        <link href="./libs/fontawesome-free-7.0.0-web/css/brands.min.css" rel="stylesheet" />
+        <link href="./libs/fontawesome-free-7.0.0-web/css/solid.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="./index.css">
         <script src="./libs/jquery-3.7.1.min.js"></script>
         <script src="./index.js"></script>
@@ -35,8 +21,8 @@
 
         <?php
 
-            if (file_exists("config.json")) {
-                if(isset($_SESSION["username"]) && isset($_SESSION["password"])) {
+            if ($isSetupOk) {
+                if($_SESSION["login"] == "1") {
                     if (isset($_GET["job"])) {
                         $jobID = $_GET["job"];
                         include("./pages/uiJob/job.php");
