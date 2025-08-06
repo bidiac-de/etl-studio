@@ -11,6 +11,8 @@
 
     if ($isSetupOk) {
         $config = json_decode(file_get_contents("config.json"), true);
+    } else {
+        session_destroy();
     }
 
 ?>
