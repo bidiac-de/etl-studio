@@ -1,6 +1,6 @@
 <?php
 
-    $serverID = isset($_GET["serverID"]) ? $db->escapeString($_GET["serverID"]) : 0;
+    $serverID = intval(isset($_GET["serverID"]) ? $db->escapeString($_GET["serverID"]) : 0);
 
     if (isset($_GET["serverID"]) && isset($_POST["key"]) && isset($_POST["description"]) && isset($_POST["host"]) && isset($_POST["protocol"]) && isset($_POST["port"])) {
         $key = $_POST["key"];
@@ -109,7 +109,7 @@
     <article>
         <header>
             <div style="float: left;">
-                <h2><i class="fa-solid fa-server"></i> Add new server</h2>
+                <h2><i class="fa-solid fa-server"></i> <?=$serverID>0?"Edit":"Add new"?> server</h2>
             </div>
             <div style="text-align: right;">
                 <button class="secondary" onclick="window.location.href='?server'"><i class="fa-solid fa-xmark"></i></button>
