@@ -57,7 +57,7 @@
                             <tr onclick="window.location.href='?job=<?=$row['jobID']?>'">
                                 <td><?=$row['jobID']?></td>
                                 <td><?=$row['jobName']?></td>
-                                <td>Sven König</td>
+                                <td><?=$_SESSION["fullname"]?></td>
                                 <td><?=$createdDate?></td>
                                 <td><i class="fa-solid fa-chevron-right"></i></td>
                             </tr>
