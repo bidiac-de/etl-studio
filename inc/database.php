@@ -11,6 +11,7 @@
     function createDatabaseScheme($username, $password) {
         global $db;
         openDatabase();
+        $db->exec("CREATE TABLE IF NOT EXISTS jobs (jobID INTEGER PRIMARY KEY AUTOINCREMENT, jobName TEXT NOT NULL, jobCreatedBy INTEGER NOT NULL DEFAULT '0', jobCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         $db->exec("CREATE TABLE IF NOT EXISTS users (userID INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, password TEXT NOT NULL, fullname TEXT NOT NULL DEFAULT '')");
         $db->exec("CREATE TABLE IF NOT EXISTS servers (serverID INTEGER PRIMARY KEY AUTOINCREMENT, host TEXT NOT NULL, access_key TEXT NOT NULL, description TEXT NOT NULL DEFAULT ''");
 
