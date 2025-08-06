@@ -67,7 +67,7 @@
 <br><br>
 <main class="container">
     
-    <h3 style="float: left; margin-right: 25px;">Execution server</h3>
+    <h3 style="float: left; margin-right: 25px;"><i class="fa-solid fa-server"></i> Execution server</h3>
     <button class="" style="cursor: pointer;" onclick="window.location.href='?server&serverID=0'">
         <i class="fa-solid fa-plus"></i> Add new server
     </button> 
