@@ -6,12 +6,10 @@
 
         $result = $db->query("SELECT * FROM servers");
         while($row = $result->fetchArray()) {
-            array_push($_SESSION["server"], $row);
+            //array_push($_SESSION["server"], $row);
+            $_SESSION["server"][$row["serverID"]] = $row;
         }
 
     }
-
-
-    //print_r($_SESSION);
 
 ?>

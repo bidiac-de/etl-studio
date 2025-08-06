@@ -1,0 +1,12 @@
+.labelColumn {
+    padding-top: 7px; 
+    padding-bottom: 4px;
+}
+
+#serverDialog .errorMsg {
+    display: none;
+}
+
+#serverTableBody tr {
+    cursor: pointer;
+}

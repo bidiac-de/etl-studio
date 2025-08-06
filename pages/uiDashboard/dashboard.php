@@ -3,11 +3,11 @@
 <header class="container-fluid">
     <div class="grid">
         <div>
-            <h2>Dashboard</h2>
+            <h2>ETL Studio</h2>
         </div>
         <div style="text-align: right;">
             <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 50%; margin-right: 10px;"/>
-            <button class="outline secondary" data-tooltip="Server" data-placement="bottom">
+            <button class="outline secondary" data-tooltip="Server" data-placement="bottom" onclick="window.location.href='?server';">
                 <i class="fa-solid fa-server"></i>
             </button>
             <button class="outline secondary" data-tooltip="User Management" data-placement="bottom">
@@ -79,7 +79,7 @@
                             <p>Can't display something.</p>
                         </hgroup>
                         <br>
-                        <button class="secondary"><i class="fa-solid fa-plus"></i> Add server</button>
+                        <button onclick="window.location.href='?server&serverID=0';" class="secondary"><i class="fa-solid fa-plus"></i> Add server</button>
                         <br><br><br>
                     </center>
                     

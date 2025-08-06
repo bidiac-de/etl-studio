@@ -12,6 +12,7 @@
         <link href="./libs/fontawesome-free-7.0.0-web/css/fontawesome.min.css" rel="stylesheet" />
         <link href="./libs/fontawesome-free-7.0.0-web/css/brands.min.css" rel="stylesheet" />
         <link href="./libs/fontawesome-free-7.0.0-web/css/solid.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="./libs/flexboxgrid.min.css">
         <link rel="stylesheet" href="./index.css">
         <script src="./libs/jquery-3.7.1.min.js"></script>
         <script src="./index.js"></script>
@@ -28,6 +29,8 @@
                         include("./pages/uiJob/job.php");
                     } else if (isset($_GET["settings"])) {
                         include("./pages/uiSettings/settings.php");
+                    } else if (isset($_GET["server"])) {
+                        include("./pages/uiServer/server.php");
                     } else {
                         include("./pages/uiDashboard/dashboard.php");
                     }
