@@ -8,7 +8,8 @@
             </button>
             <h2>Settings</h2>
         </div>
-        <div style="direction: rtl;">
+        <div style="text-align: right;">
+            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 50%; margin-right: 10px;"/>
         </div>
     </div>
 </header>
