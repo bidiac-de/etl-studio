@@ -46,5 +46,17 @@
             
         ?>
 
+
+
+        <dialog id="alertDialog">
+            <article>
+                <h2></h2>
+                <p></p>
+                <footer>
+                    <button onclick="$('#alertDialog').removeAttr('open');">Okay</button>
+                </footer>
+            </article>
+        </dialog>
+
     </body>
 </html>

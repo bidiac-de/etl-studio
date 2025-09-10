@@ -116,7 +116,9 @@ if (jobID != "0") {
         ETL.api.post(serverID, "/jobs/", postData).then(function(data) {
             console.log(data);
             if (data !== false) {
-                window.location.href="./";
+                window.location.href="./?serverID="+serverID+"&job="+data;
+            } else {
+                ETL.util.alert("Server Error", "Unexpected response from server");
             }
         });
     });

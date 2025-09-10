@@ -31,7 +31,7 @@
 
             if (sizeof($server) > 0) {
                 ?>
-                <h3 style="float: left; margin-right: 25px;">Jobs</h3>
+                <h3 style="float: left; margin-right: 25px;"><i class="fa-solid fa-diagram-project"></i> Jobs</h3>
                 <button style="cursor: pointer;" onclick="window.location.href='?job=0'">
                     <i class="fa-solid fa-plus"></i> Add new job
                 </button>
@@ -43,9 +43,9 @@
                     <thead>
                         <tr>
                             <!--<th class="tableFit">ID</th>-->
-                            <th style="width: 50%;">Name</th>
-                            <th>Server</th>
-                            <th id="thLastChange">Last changed</th>
+                            <th style="width: 50%;"><i class="fa-solid fa-pencil"></i> Name</th>
+                            <th><i class="fa-solid fa-server"></i> Server</th>
+                            <th id="thLastChange"><i class="fa-solid fa-clock-rotate-left"></i> Last changed</th>
                             <th class="tableFit"></th>
                         </tr>
                     </thead>

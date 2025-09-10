@@ -162,3 +162,9 @@ ETL.util.formatDate = function(date = new Date()) {
         second: "2-digit"
     });
 }
+
+ETL.util.alert = function(header = "Alert", message = "") {
+    $("#alertDialog").attr("open", "");
+    $("#alertDialog h2").html(header);
+    $("#alertDialog p").html(message);
+}

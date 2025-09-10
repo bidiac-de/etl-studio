@@ -1,5 +1,6 @@
 function reloadJobListTable() {
 
+    $("#jobTable").hide();
     $("#jobTableBody").html("");
 
     console.log(server);
@@ -22,6 +23,7 @@ function reloadJobListTable() {
             }
 
             sortTableByTh($("#thLastChange"), false);
+            $("#jobTable").show();
         });
 
     }
