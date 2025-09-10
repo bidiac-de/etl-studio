@@ -1,6 +1,10 @@
 <?php
 
-    $jobName = "";
+    if (isset($_GET["serverID"])) {
+        $serverID = $_GET["serverID"];
+    }
+
+    /*$jobName = "";
 
     if ($jobID > 0) {
 
@@ -24,7 +28,7 @@
                 header("refresh:0; url=./");
             }
         }
-    }
+    }*/
 
 ?>
 
@@ -38,13 +42,7 @@
                 <i class="fa-solid fa-arrow-left-long"></i>
             </button>
             <h2 style="float: left;">Job</h2>
-            <?php
-                if ($jobName != "") {
-                    ?>
-                    <h2>: <?=$jobName?></h2>
-                    <?php
-                }
-            ?>
+            <h2 id="jobTitle"></h2>
         </div>
         <div style="direction: rtl;">
             <?php
@@ -71,7 +69,7 @@
             <button class="outline secondary" data-tooltip="Save" data-placement="bottom" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
             </button>
-            <button onclick="$('#componentDialog').attr('open', '');">
+            <button id="openComponentsDialog">
                 Add component <i class="fa-solid fa-plus"></i>
             </button>
 
@@ -84,6 +82,7 @@
 </header>
 
 <input type="hidden" value="<?=$jobID?>" id="jobID">
+<input type="hidden" value="<?=$serverID?>" id="serverID">
 
 <?php
     if ($jobID > 0) {
@@ -102,20 +101,16 @@
         <div id="footer">
             <div class="grid">
                 <div class="leftFooter">
-                    <!--<div class="connectionLamp"></div>
-                    <span>Execution server online</span>-->
                     <span class="btn" id="btnOpenTerminalFooter"><i class="fa-solid fa-terminal"></i></span>
                     <span class="btn">
                         <i class="fa-solid fa-clock-rotate-left" style="margin-right: 5px;"></i>
-                        <?=$jobCreated?>
+                        <span id="lastChanged"></span>
                     </span>
                 </div>
                 <div>
                     
                 </div>
                 <div style="text-align: right; margin-right: 10px; user-select: none;">
-                    <!--<span>current version: <?=$jobCreated?></span>-->
-
                     <span id="zoomNeutral" style="margin-right: 5px;"><i class="fa-solid fa-expand"></i></span>
                     <span id="zoomDecrement"><i class="fa-solid fa-minus"></i></span>
                     <span id="zoomText">100%</span>
@@ -138,15 +133,12 @@
                             <button class="secondary" onclick="$('#componentDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
-                </header>    
+                </header>
 
-                <br>
-                <h3>Default components</h3>
-                <hr>
-
-                <table id="componentsTable">
+                <div id="componentsTableDiv">
+                    <table id="componentsTable">
                     <?php
-
+                    /*
                     function printComponentListElement($name, $level = 0) {
                         $style = $level == 0 ? "" : "style='padding-left: ".($level*32)."px'";
                         $extra = $level == 0 ? "" : "&#8627;&nbsp;&nbsp;&nbsp;";
@@ -179,13 +171,10 @@
                         } else {
                             printComponentListElement($value);
                         }
-                    }
+                    }*/
                     ?>
-                </table>
-
-                <h3>Custom components</h3>
-                <hr>
-                
+                    </table>
+                </div>
                 
             </article>
         </dialog>
@@ -199,7 +188,7 @@
                 </p>
                 <footer>
                     <button class="secondary" onclick="$('#deleteDialog').removeAttr('open');">Cancel</button>
-                    <button id="btnConfirmDelete" onclick="window.location.href+='&delete'"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <button id="btnConfirmDelete"><i class="fa-solid fa-trash"></i> Delete</button>
                 </footer>
             </article>
         </dialog>
@@ -211,42 +200,32 @@
         <?php
     } else {
 
-        if (isset($_POST["jobname"])) {
-            $jobName = $db->escapeString($_POST["jobname"]);
-            $jonCreatedBy = $db->escapeString($_POST["jobcreatedby"]);
 
-            $result = $db->query("INSERT INTO jobs (jobName) VALUES ('$jobName')");
-            $jobID = $db->lastInsertRowID();
-
-            if ($jobID > 0) {
-                header("refresh:0; url=?job=$jobID");
-            } else {
-
-            }
-            /*print_r($result);
-            print_r($result->fetchArray());*/
-
-        }
 
         ?>
         <br><br>
         <main class="container">
-            <h3>Create new job</h3>
+            <h3><i class="fa-solid fa-diagram-project"></i> Create new job</h3>
             <hr>
-            <form method="POST" action="?job=0" onsubmit="$(this).find('input').prop('disabled', false)">
-                <fieldset>
-                    <label>
-                        Job name
-                        <input name="jobname"/>
-                    </label>
-                    <label>
-                        Created by
-                        <input name="jobcreatedby" value="<?=$_SESSION["fullname"]?>" disabled />
-                    </label>
-                </fieldset>
-                <button><i class="fa-solid fa-floppy-disk"></i> Save</button>
-            </form>
-            
+            <fieldset>
+                <label>
+                    Server
+                    <select id="newJobServerSelection" name="select" aria-label="Server selection" required>
+                        <option selected disabled value="">Select</option>
+                        <?php
+                            if (isset($_SESSION["server"])) {
+                                $server = $_SESSION["server"];
+                                foreach ($server as $key => $value) {
+                                    ?><option value="<?=$key?>"><?=$value["description"]." (".$value["host"].")"?></option><?php
+                                }
+                            }
+                        ?>
+                    </select>
+                </label>
+                <div id="jobDetailsFieldset"></div>
+
+            </fieldset>
+            <button id="newJobSaveButton" disabled><i class="fa-solid fa-floppy-disk"></i> Save</button>
         </main>
         <?php
     }

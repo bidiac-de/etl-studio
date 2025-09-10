@@ -10,6 +10,8 @@
             $_SESSION["server"][$row["serverID"]] = $row;
         }
 
+        echo "<script>var server = ".json_encode($_SESSION["server"])."</script>";
+
     }
 
 ?>

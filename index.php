@@ -1,7 +1,7 @@
 <?php
     require_once("inc/includes.php");
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
     <head>
         <meta charset="utf-8">
@@ -31,6 +31,8 @@
                         include("./pages/uiSettings/settings.php");
                     } else if (isset($_GET["server"])) {
                         include("./pages/uiServer/server.php");
+                    } else if (isset($_GET["user"])) {
+                        include("./pages/uiUserManagement/userManagement.php");
                     } else {
                         include("./pages/uiDashboard/dashboard.php");
                     }

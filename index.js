@@ -10,6 +10,9 @@ if (darktheme) {
 
 var ETL = {};
 
+
+/** Console */
+
 ETL.console = {};
 
 ETL.console.getLocaleDatetime = function() {
@@ -52,3 +55,110 @@ ETL.console.fireChangeHandler = function() {
 }
 
 ETL.console.onChangeHandler = function(log) {}
+
+
+
+/** API */
+
+ETL.api = ETL.api || {};
+
+ETL.api.get = function(serverID = 0, endpoint = "", data = {}) {
+    return new Promise(function(resolve, reject) {
+        if (server[serverID] != undefined) {
+            var url = server[serverID].host+endpoint;
+            $.ajax({
+                url: url,
+                data: data,
+                method: "GET",
+                timeout: 2000,
+                success: function(data) {
+                    resolve(data);
+                },
+                error: function() {
+                    resolve(false);
+                }
+            });
+        } else {
+            resolve(false);
+        }
+    });
+}
+
+ETL.api.post = function(serverID = 0, endpoint = "", data = {}) {
+    return new Promise(function(resolve, reject) {
+        if (server[serverID] != undefined) {
+            var url = server[serverID].host+endpoint;
+            $.ajax({
+                url: url,
+                data: JSON.stringify(data),
+                method: "POST",
+                timeout: 2000,
+                contentType: "application/json; charset=utf-8",
+                success: function(data) {
+                    resolve(data);
+                },
+                error: function() {
+                    resolve(false);
+                }
+            });
+        } else {
+            resolve(false);
+        }
+    });
+}
+
+ETL.api.delete = function(serverID = 0, endpoint = "") {
+    return new Promise(function(resolve, reject) {
+        if (server[serverID] != undefined) {
+            var url = server[serverID].host+endpoint;
+            $.ajax({
+                url: url,
+                method: "DELETE",
+                timeout: 2000,
+                success: function(data) {
+                    resolve(true);
+                },
+                error: function() {
+                    resolve(false);
+                }
+            });
+        } else {
+            resolve(false);
+        }
+    });
+}
+
+
+
+/** Util */
+
+ETL.util = ETL.util || {};
+
+ETL.util.resolveLocal = function(schema, ref) {
+    const path = ref.replace(/^#\//, "").split("/");
+    return path.reduce((acc, k) => acc && acc[k], schema);
+}
+
+ETL.util.deref = function(obj, root = obj) {
+    if (Array.isArray(obj)) return obj.map(i => ETL.util.deref(i, root));
+    if (obj && typeof obj === "object") {
+        if (obj.$ref && typeof obj.$ref === "string" && obj.$ref.startsWith("#/")) {
+            return ETL.util.deref(ETL.util.resolveLocal(root, obj.$ref), root);
+        }
+        const out = {};
+        for (const k of Object.keys(obj)) out[k] = ETL.util.deref(obj[k], root);
+        return out;
+    }
+    return obj;
+}
+
+ETL.util.formatDate = function(date = new Date()) {
+    return date.toLocaleString("de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+}

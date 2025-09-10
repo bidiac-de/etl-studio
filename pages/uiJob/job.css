@@ -22,6 +22,14 @@ body {
     text-align: right;
 }
 
+#componentsTableDiv {
+    height: 50vh;
+    max-height: 50vh;
+    overflow: scroll;
+}
+
+
+
 
 #whiteboard {
     width: 130vw;
