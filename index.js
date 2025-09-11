@@ -107,6 +107,29 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}) {
     });
 }
 
+ETL.api.put = function(serverID = 0, endpoint = "", data = {}) {
+    return new Promise(function(resolve, reject) {
+        if (server[serverID] != undefined) {
+            var url = server[serverID].host+endpoint;
+            $.ajax({
+                url: url,
+                data: JSON.stringify(data),
+                method: "PUT",
+                timeout: 2000,
+                contentType: "application/json; charset=utf-8",
+                success: function(data) {
+                    resolve(data);
+                },
+                error: function() {
+                    resolve(false);
+                }
+            });
+        } else {
+            resolve(false);
+        }
+    });
+}
+
 ETL.api.delete = function(serverID = 0, endpoint = "") {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
@@ -126,6 +149,90 @@ ETL.api.delete = function(serverID = 0, endpoint = "") {
             resolve(false);
         }
     });
+}
+
+
+
+/** Render */
+
+ETL.render = ETL.render || {};
+
+ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
+    console.log(property);
+    var propertyName = property["name"];
+    var required = property["required"] ? "required" : "";
+    var schema = property["schema"];
+    var description = schema["description"] || "";
+    var title = schema["title"] || "";
+    if (defaultValue === undefined) {
+        defaultValue = schema["default"];
+        if (defaultValue == undefined) {
+            defaultValue = "";
+        }
+    }
+    
+    jobDetailsFieldsetHTML = "";
+
+    if (schema.type == "string") {
+        jobDetailsFieldsetHTML += "<label>"+title+"<input class='formInput' autocomplete='off' name='"+propertyName+"' value='"+defaultValue+"' type='text' "+required+"/></label>";
+    } else if (schema.type == "integer") {
+        var minimum = "";
+        if (property.minimum != undefined) {
+            minimum = "min='"+property.minimum+"'";
+        }
+        jobDetailsFieldsetHTML += "<label>"+title+"<input class='formInput' autocomplete='off' name='"+propertyName+"' value='"+defaultValue+"' type='number' steps='1' "+minimum+" oninput='this.value=(parseInt(this.value)||0)' "+required+"/></label>";
+    } else if (schema.type == "boolean") {
+        defaultValue = defaultValue === true ? "checked" : "";
+        jobDetailsFieldsetHTML += "<label>"+title+"<br><input class='formInput' style='margin-top: 3px;' autocomplete='off' name='"+propertyName+"' "+defaultValue+" type='checkbox' "+required+"/></label>";
+    } else if (schema.type == "select") {
+        jobDetailsFieldsetHTML += "<label>"+title+"<br><select class='formInput' name='"+propertyName+"' aria-label='"+title+"' "+required+">";
+        for (var option of schema.enum) {
+            var selected = option == defaultValue ? "selected" : "";
+            jobDetailsFieldsetHTML += "<option "+selected+" value='"+option+"'>"+option+"</option>";
+        }
+        jobDetailsFieldsetHTML += "</select></label>";
+    }
+
+    return jobDetailsFieldsetHTML;
+}
+
+ETL.render.jobEdit = function(serverID, jobID = undefined) {
+    return new Promise(function(resolve, reject) {
+        ETL.api.get(serverID, "/configs/job").then(function(rawJsonData) {
+            var data = ETL.util.deref(rawJsonData);
+            console.log(data);
+
+            var html = "";
+
+            if (data.properties != undefined) {
+
+                if (jobID != undefined) {
+                    ETL.api.get(serverID, "/jobs/"+jobID).then(function(jobData) {
+                        if (jobData !== false) {
+                            console.log(jobData);
+                            for (var property of data.properties) {
+                                var propertyName = property["name"];
+                                console.log(propertyName);
+                                console.log(jobData[propertyName]);
+                                html += ETL.render.propertyToHTML(property, jobData[propertyName]);
+                            }
+                            resolve(html);
+                        } else {
+                            resolve(false);
+                        }
+                    });
+                } else {
+                    for (var property of data.properties) {
+                        html += ETL.render.propertyToHTML(property);
+                    }
+                    resolve(html);
+                }                
+            } else {
+                resolve(false);
+            }
+        });
+    });
+    
 }
 
 
@@ -167,4 +274,24 @@ ETL.util.alert = function(header = "Alert", message = "") {
     $("#alertDialog").attr("open", "");
     $("#alertDialog h2").html(header);
     $("#alertDialog p").html(message);
+}
+
+ETL.util.getFormData = function(element) {
+    var postData = {};
+    var newJobInput = $(element).find(".formInput");
+    newJobInput.each(function(key, value) {
+        var type = $(value).attr("type");
+        var postValue;
+        if (type == "checkbox") {
+            postValue = $(value).prop("checked");
+        } else if (type == "number") {
+            postValue = parseFloat($(value).val());
+        } else {
+            postValue = $(value).val();
+        }
+        if (postValue != undefined) {
+            postData[$(value).attr("name")] = postValue;
+        }
+    });
+    return postData;
 }

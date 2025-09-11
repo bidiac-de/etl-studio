@@ -4,32 +4,6 @@
         $serverID = $_GET["serverID"];
     }
 
-    /*$jobName = "";
-
-    if ($jobID > 0) {
-
-        $jobID = intval($jobID);
-
-        if (isset($_GET["delete"])) {
-
-            $result = $db->query("DELETE FROM jobs WHERE jobID='$jobID'");
-            header("refresh:0; url=?job=$jobID");
-
-        } else {
-            $result = $db->query("SELECT * FROM jobs WHERE jobID='$jobID'");
-
-            $resultArray = $result->fetchArray();
-            if ($resultArray) {
-                $jobName = $resultArray["jobName"];
-                $dt = new DateTime($resultArray['jobCreated'], new DateTimeZone("UTC"));
-                $dt->setTimezone(new DateTimeZone($timeZone));
-                $jobCreated = $dt->format("d.m.Y H:i:s");
-            } else {
-                header("refresh:0; url=./");
-            }
-        }
-    }*/
-
 ?>
 
 
@@ -51,7 +25,7 @@
             <button class="outline secondary" data-tooltip="Delete" data-placement="bottom" id="btnDelete" onclick="$('#deleteDialog').attr('open', '');">
                 <i class="fa-solid fa-trash"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Settings" data-placement="bottom">
+            <button class="outline secondary" data-tooltip="Settings" data-placement="bottom" id="btnSettings">
                 <i class="fa-solid fa-gear"></i>
             </button>
             <!--<button class="outline secondary" data-tooltip="Version" data-placement="bottom">
@@ -107,9 +81,7 @@
                         <span id="lastChanged"></span>
                     </span>
                 </div>
-                <div>
-                    
-                </div>
+                <div></div>
                 <div style="text-align: right; margin-right: 10px; user-select: none;">
                     <span id="zoomNeutral" style="margin-right: 5px;"><i class="fa-solid fa-expand"></i></span>
                     <span id="zoomDecrement"><i class="fa-solid fa-minus"></i></span>
@@ -134,48 +106,32 @@
                         </div>
                     </div>
                 </header>
-
                 <div id="componentsTableDiv">
-                    <table id="componentsTable">
-                    <?php
-                    /*
-                    function printComponentListElement($name, $level = 0) {
-                        $style = $level == 0 ? "" : "style='padding-left: ".($level*32)."px'";
-                        $extra = $level == 0 ? "" : "&#8627;&nbsp;&nbsp;&nbsp;";
-                        ?>
-                        <tr>
-                            <td <?=$style?>><?=$extra.$name?></td>
-                            <td>
-                                <button class="secondary"><i class="fa-solid fa-sliders"></i> Custom</button>
-                                <button><i class="fa-solid fa-plus"></i> Add</button>
-                            </td>
-                        </tr>
-                        <?php
-                    }
-
-                    function printComponentListElementHeader($name, $level = 0) {
-                        ?>
-                        <tr>
-                            <td><b><?=$name?></b></td>
-                            <td></td>
-                        </tr>
-                        <?php
-                    }
-
-                    foreach ($availableComponents as $key => $value) {
-                        if (is_array($value)) {
-                            printComponentListElementHeader($key);
-                            foreach ($value as $key2 => $value2) {
-                                printComponentListElement($value2, 1);
-                            }
-                        } else {
-                            printComponentListElement($value);
-                        }
-                    }*/
-                    ?>
-                    </table>
+                    <table id="componentsTable"></table>
                 </div>
+            </article>
+        </dialog>
+
+        <dialog id="settingsDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Job Settings</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#settingsDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
                 
+                <div id="settingsDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveJobSettings"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
             </article>
         </dialog>
 
@@ -183,9 +139,7 @@
         <dialog id="deleteDialog">
             <article>
                 <h2>Confirm</h2>
-                <p>
-                    Are you sure to delete the job? It can't be undone.
-                </p>
+                <p>Are you sure to delete the job? It can't be undone.</p>
                 <footer>
                     <button class="secondary" onclick="$('#deleteDialog').removeAttr('open');">Cancel</button>
                     <button id="btnConfirmDelete"><i class="fa-solid fa-trash"></i> Delete</button>

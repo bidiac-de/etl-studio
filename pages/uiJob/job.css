@@ -28,7 +28,13 @@ body {
     overflow: scroll;
 }
 
-
+#settingsDialogMain {
+    height: 50vh;
+    max-width: 50vh;
+    overflow: scroll;
+    min-width: 100%;
+    width: 100%;
+}
 
 
 #whiteboard {
