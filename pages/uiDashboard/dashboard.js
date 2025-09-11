@@ -74,7 +74,17 @@ function sortTableByTh($th, asc = false) {
 
 
 
+
+$("#jobSearch").on("input", function() {
+    var searchText = $(this).val().toLowerCase();
+    $("#jobTableBody tr").each(function() {
+      const rowText = $(this).text().toLowerCase();
+      $(this).toggle(rowText.indexOf(searchText) >= 0);
+    });
+});
+
 $("#refreshJobList").click(reloadJobListTable);
+
 
 
 reloadJobListTable();
