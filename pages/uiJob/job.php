@@ -62,7 +62,8 @@
     if ($jobID > 0) {
         ?>
         <div id="whiteboard-container">
-            <div id="whiteboard"></div>
+            <!--<div id="whiteboard"></div>-->
+            <div id="drawflow"></div>
         </div>
         <div id="console">
             <div class="title">

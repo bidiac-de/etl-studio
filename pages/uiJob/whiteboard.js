@@ -1,4 +1,4 @@
-var isMovingWhiteboard = false;
+/*var isMovingWhiteboard = false;
 var whiteboardMarginLeft = 0;
 var whiteboardMarginTop = 0;
 var mouseStartX = 0;
@@ -80,4 +80,55 @@ $("#zoomIncrement").click(function() {
 $("#zoomDecrement").click(function() {
     var currentZoom = parseFloat($("#whiteboard").css("zoom"));
     setWhiteboardZoom(Math.round(currentZoom / 0.05) * 0.05 - 0.05);
+});*/
+
+
+
+var drawflow = document.getElementById("drawflow");
+var editor = new Drawflow(drawflow);
+
+editor.editor_mode = "edit";
+editor.zoom_value = 0.01;
+
+editor.start();
+
+editor.on("zoom", function(zoom_level) {
+    $("#zoomText").html(Math.round(zoom_level * 100) + "%");
+});
+
+
+
+var html = `
+    <span class='componentIcon'><i class="fa-solid fa-filter"></i></span><br>
+    <span class='componentName'>Filter</span>
+`;
+
+editor.addNode('componentID', 2, 1, 150, 300, 'component', {}, html);
+
+
+
+
+
+$("#zoomNeutral").click(function() {
+    var maxSteps = 100;
+    while (editor.zoom != 1 && maxSteps > 0) {
+        if (editor.zoom > 1) {
+            editor.zoom_out();
+        } else {
+            editor.zoom_in();
+        }
+        maxSteps--;
+    }
+});
+
+$("#zoomIncrement").click(function() {
+    for (var i = 0; i < 10; i++) {
+        editor.zoom_in();
+    }
+});
+
+$("#zoomDecrement").click(function() {
+    for (var i = 0; i < 10; i++) {
+        editor.zoom_out();
+    }
 });
