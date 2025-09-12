@@ -1,7 +1,11 @@
 var jobID = $("#jobID").val();
 var serverID = $("#serverID").val();
 
+var componentsTemplate = {};
 var components = {};
+var currentJobJson;
+var codemirror;
+
 
 if (jobID != "0") {
 
@@ -62,7 +66,7 @@ if (jobID != "0") {
                         var componentTitle = component.title;
                         var compType = component["comp-type"];
 
-                        components[compType] = component;
+                        componentsTemplate[compType] = component;
                         componentTable += "<tr><td><i class=\"fa-solid fa-box\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
 
                         
@@ -82,6 +86,58 @@ if (jobID != "0") {
                 $('#settingsDialog').attr('open', '');
             }
         });
+    });
+
+    $("#btnSave").click(function() {
+        exportToJson().then(function(json) {
+            ETL.api.put(serverID, "/jobs/"+jobID, json).then(function(data) {
+                console.log(data);
+                if (data == false) {
+                    ETL.util.alert("Server Error", "Unexpected response from server");
+                }
+            });
+        });
+    });
+
+    $("#btnJSON").click(function() {
+        if (codemirror == undefined) {
+
+            $(this).html('<i class="fa-solid fa-display"></i>');
+            $(this).attr("data-tooltip", "Whiteboard");
+            $("#openComponentsDialog").prop("disabled", true);
+
+            exportToJson().then(function(json) {
+
+                codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), {
+                    mode: { 
+                        name: "javascript", 
+                        json: true 
+                    },
+                    lineNumbers: true,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    theme: "ayu-mirage",
+                    readOnly: true
+                });
+
+                codemirror.setSize("100%", "100%");
+
+                codemirror.setValue(JSON.stringify(json, null, 2));
+            });
+        } else {
+            codemirror.toTextArea();
+            codemirror = undefined;
+
+            $(this).html('<i class="fa-solid fa-code"></i>');
+            $(this).attr("data-tooltip", "JSON");
+            $("#openComponentsDialog").prop("disabled", false);
+        }
+        $("#codemirror").toggle();
+        $("#drawflow").toggle();
+
+        
+
+        
     });
 
     $("#btnSaveJobSettings").click(function() {
@@ -116,6 +172,7 @@ if (jobID != "0") {
 
             $("#jobTitle").html(": "+jobName);
             $("#lastChanged").html(jobLastChanged);
+
         } else {
             window.location.href="./";
         }

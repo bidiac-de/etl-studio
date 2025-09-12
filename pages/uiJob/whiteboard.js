@@ -83,20 +83,95 @@ $("#zoomDecrement").click(function() {
 });*/
 
 
+function exportToJson() {
+    return new Promise(function(resolve, reject) {
+        ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+            if (data !== false) {
+
+                var drawFlowExport = editor.export();
+                var drawFlowComponents = drawFlowExport["drawflow"]["Home"]["data"];
+
+                data["components"] = [];
+
+                if (drawFlowComponents != undefined) {
+                    for (var drawFlowComponentID in drawFlowComponents) {
+                        var drawFlowComponent = drawFlowComponents[drawFlowComponentID];
+                        console.log(drawFlowComponent);
+                        var component = drawFlowComponent.data;
+                        component["layout"] = {
+                            "x_coordinate": drawFlowComponent.pos_x,
+                            "y_coordinate": drawFlowComponent.pos_y
+                        }
+                        data["components"].push(component);
+                    }
+                }
+
+                resolve(data);
+            } else {
+                resolve(false);
+            }
+        });
+    });
+    
+}
 
 
 function addComponentToWhiteboard(compType) {
-    var selectedComponent = structuredClone(components[compType]);
-    console.log(selectedComponent);
 
-    var title = selectedComponent.title;
-    var icon = selectedComponent.icon || "fa-solid fa-question";
-    var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
-    var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+    ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
+        if (selectedComponentRaw !== false) {
+            //var selectedComponent = structuredClone(componentsTemplate[compType]);
+            //console.log(selectedComponent);
 
-    var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+title+"</span>";
+            var selectedComponent = ETL.util.deref(selectedComponentRaw);
+            console.log(selectedComponent);
 
-    editor.addNode('componentID', inputPorts, outputPorts, 150, 300, 'component', {}, html);
+            var title = selectedComponent.title;
+            var icon = selectedComponent.icon || "fa-solid fa-question";
+            var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
+            var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+
+            var x_coordinate = 150;
+            var y_coordinate = 300;
+
+            var componentProperties = {
+                "comp_type": compType
+            }
+
+            for (var propertyName in selectedComponent.properties) {
+                var property = selectedComponent.properties[propertyName];
+                //console.log(propertyName);
+                //console.log(property);
+
+                var propertyValue = undefined;
+                var propertyDefault = property.default;
+
+                if (property.type == "string") {
+                    propertyValue = propertyDefault || "";
+                } else if (property.type == "object") {
+                    propertyValue = propertyDefault || {};
+                } else if (property.type == "integer") {
+                    propertyValue = propertyDefault || 0;
+                }
+
+                if (propertyValue != undefined) {
+                    componentProperties[propertyName] = propertyValue;
+                } else {
+                    componentProperties[propertyName] = {};
+                }
+            }
+
+            if (componentProperties["name"] == "") {
+                componentProperties["name"] = selectedComponent["title"];
+            }
+
+            var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+title+"</span>";
+
+            editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
+
+            $('#componentDialog').removeAttr('open');
+        }
+    });
 
 }
 
@@ -106,11 +181,16 @@ var editor = new Drawflow(drawflow);
 
 editor.editor_mode = "edit";
 editor.zoom_value = 0.01;
+editor.reroute = false;
 
 editor.start();
 
 editor.on("zoom", function(zoom_level) {
     $("#zoomText").html(Math.round(zoom_level * 100) + "%");
+});
+
+editor.on("contextmenu", function(event) {
+    console.log($(event.srcElement).closest(".component"));
 });
 
 

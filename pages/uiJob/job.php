@@ -37,10 +37,10 @@
             <button class="outline secondary" data-tooltip="Console" data-placement="bottom" id="btnOpenConsole">
                 <i class="fa-solid fa-terminal"></i>
             </button>
-            <button class="outline secondary" data-tooltip="JSON" data-placement="bottom">
+            <button class="outline secondary" data-tooltip="JSON" data-placement="bottom" id="btnJSON">
                 <i class="fa-solid fa-code"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" disabled>
+            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" id="btnSave" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
             </button>
             <button id="openComponentsDialog">
@@ -64,6 +64,7 @@
         <div id="whiteboard-container">
             <!--<div id="whiteboard"></div>-->
             <div id="drawflow"></div>
+            <textarea id="codemirror"></textarea>
         </div>
         <div id="console">
             <div class="title">
