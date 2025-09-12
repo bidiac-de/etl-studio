@@ -259,6 +259,41 @@ ETL.util.deref = function(obj, root = obj) {
     return obj;
 }
 
+ETL.util.resolveLocal = function(schema, ref) {
+    const path = ref.replace(/^#\//, "").split("/");
+    return path.reduce((acc, k) => acc && acc[k], schema);
+}
+
+ETL.util.deref = function(obj, root = obj, seen = new WeakMap()) {
+    if (Array.isArray(obj)) {
+        return obj.map(i => ETL.util.deref(i, root, seen));
+    }
+
+    if (obj && typeof obj === "object") {
+        // Zyklusprüfung
+        if (seen.has(obj)) {
+            return seen.get(obj);
+        }
+
+        // Lokales $ref auflösen
+        if (obj.$ref && typeof obj.$ref === "string" && obj.$ref.startsWith("#/")) {
+            const resolved = ETL.util.resolveLocal(root, obj.$ref);
+            if (!resolved) return null; // falls ungültig
+            return ETL.util.deref(resolved, root, seen);
+        }
+
+        const out = Array.isArray(obj) ? [] : {};
+        seen.set(obj, out); // merken, bevor wir Felder expandieren
+
+        for (const k of Object.keys(obj)) {
+            out[k] = ETL.util.deref(obj[k], root, seen);
+        }
+        return out;
+    }
+
+    return obj;
+}
+
 ETL.util.formatDate = function(date = new Date()) {
     return date.toLocaleString("de-DE", {
         year: "numeric",

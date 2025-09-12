@@ -57,7 +57,7 @@ if (jobID != "0") {
                     var componentTable = "";
 
                     for (var componentPromise of data) {
-                        var component = componentPromise.value;
+                        var component = ETL.util.deref(componentPromise.value);
                         console.log(component);
 
                         var componentTitle = component.title;

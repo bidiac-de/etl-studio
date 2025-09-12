@@ -16,6 +16,7 @@
         <link rel="stylesheet" href="./libs/flexboxgrid.min.css">
         <link rel="stylesheet" href="./libs/drawflow-dist-0.0.60/drawflow.min.css">
         <link rel="stylesheet" href="./libs/drawflow-dist-0.0.60/drawflow-style.css">
+        <link rel="stylesheet" href="./libs/tabler-icons-3.34.1/dist/tabler-icons.min.css">
         <link rel="stylesheet" href="./index.css">
         
         <script src="./libs/jquery-3.7.1.min.js"></script>
