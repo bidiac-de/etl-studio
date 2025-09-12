@@ -1,6 +1,8 @@
 var jobID = $("#jobID").val();
 var serverID = $("#serverID").val();
 
+var components = {};
+
 if (jobID != "0") {
 
     ETL.console.onChangeHandler = function(log) {
@@ -43,7 +45,6 @@ if (jobID != "0") {
         $("#componentsTable").html("");
         $("#componentDialog").attr("open", "");
         ETL.api.get(serverID, "/configs/component_types/").then(function(componentTypes) {
-            console.log(componentTypes);
             if (componentTypes !== false) {
 
                 var promises = [];
@@ -58,11 +59,11 @@ if (jobID != "0") {
 
                     for (var componentPromise of data) {
                         var component = ETL.util.deref(componentPromise.value);
-                        console.log(component);
-
                         var componentTitle = component.title;
+                        var compType = component["comp-type"];
 
-                        componentTable += "<tr><td><i class=\"fa-solid fa-box\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
+                        components[compType] = component;
+                        componentTable += "<tr><td><i class=\"fa-solid fa-box\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
 
                         
                     }

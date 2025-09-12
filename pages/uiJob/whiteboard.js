@@ -84,6 +84,23 @@ $("#zoomDecrement").click(function() {
 
 
 
+
+function addComponentToWhiteboard(compType) {
+    var selectedComponent = structuredClone(components[compType]);
+    console.log(selectedComponent);
+
+    var title = selectedComponent.title;
+    var icon = selectedComponent.icon || "fa-solid fa-question";
+    var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
+    var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+
+    var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+title+"</span>";
+
+    editor.addNode('componentID', inputPorts, outputPorts, 150, 300, 'component', {}, html);
+
+}
+
+
 var drawflow = document.getElementById("drawflow");
 var editor = new Drawflow(drawflow);
 
@@ -95,16 +112,6 @@ editor.start();
 editor.on("zoom", function(zoom_level) {
     $("#zoomText").html(Math.round(zoom_level * 100) + "%");
 });
-
-
-
-var html = `
-    <span class='componentIcon'><i class="fa-solid fa-filter"></i></span><br>
-    <span class='componentName'>Filter</span>
-`;
-
-editor.addNode('componentID', 2, 1, 150, 300, 'component', {}, html);
-
 
 
 
