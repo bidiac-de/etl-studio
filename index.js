@@ -232,7 +232,37 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
             }
         });
     });
-    
+}
+
+ETL.render.componentEdit = function(componentID) {
+    return new Promise(function(resolve, reject) {
+
+        var selectedEditComponent = editor.getNodeFromId(componentID);
+        var compType = selectedEditComponent.data["comp_type"];
+        console.log(selectedEditComponent, compType);
+
+        ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(componentFormRaw) {
+            var data = ETL.util.deref(componentFormRaw);
+            var html = "";
+            console.log(data);
+
+            if (data.properties != undefined) {
+
+                for (var propertyName in data.properties) {
+                    //var propertyName = property["name"];
+                    var property = data.properties[propertyName];
+                    console.log(property);
+                    console.log(propertyName);
+                    console.log(selectedEditComponent.data[propertyName]);
+                    html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
+                }
+                resolve(html);             
+            } else {
+                resolve(false);
+            }
+
+        });
+    });
 }
 
 

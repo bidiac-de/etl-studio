@@ -163,6 +163,199 @@ if (jobID != "0") {
         });
     });
 
+    $("#zoomNeutral").click(function() {
+        var maxSteps = 100;
+        while (editor.zoom != 1 && maxSteps > 0) {
+            if (editor.zoom > 1) {
+                editor.zoom_out();
+            } else {
+                editor.zoom_in();
+            }
+            maxSteps--;
+        }
+    });
+
+    $("#zoomIncrement").click(function() {
+        for (var i = 0; i < 10; i++) {
+            editor.zoom_in();
+        }
+    });
+
+    $("#zoomDecrement").click(function() {
+        for (var i = 0; i < 10; i++) {
+            editor.zoom_out();
+        }
+    });
+
+    $("#contextMenuDeleteBtn").click(function() {
+        if (contextMenuSelectedComponent != undefined) {
+            editor.removeNodeId(contextMenuSelectedComponent);
+            contextMenuSelectedComponent = undefined;
+        }
+        if (contextMenuSelectedConnection != undefined) {
+            var nodeInput = contextMenuSelectedConnection[1].split("-")[1];
+            var nodeOutput = contextMenuSelectedConnection[2].split("-")[1];
+            var output = contextMenuSelectedConnection[3];
+            var input = contextMenuSelectedConnection[4];
+
+            editor.removeSingleConnection(nodeOutput, nodeInput, output, input);
+            contextMenuSelectedConnection = undefined;
+        }
+    });
+
+    $("#contextMenuEditBtn").click(function() {
+        if (contextMenuSelectedComponent != undefined) {
+            $("#componentEditDialog").attr("open", "");
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+
+            ETL.render.componentEdit(selectedComponentID).then(function(result) {
+                if (result !== false) {
+                    $("#componentEditDialogMain").html(result);
+                    $("#btnSaveComponent").attr("disabled", false);
+                } else {
+                    $("#componentEditDialogMain").html("No Server connection!");
+                    $("#btnSaveComponent").attr("disabled", true);
+                }
+            });
+        }
+    });
+
+
+
+    function exportToJson() {
+        return new Promise(function(resolve, reject) {
+            ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+                if (data !== false) {
+
+                    var drawFlowExport = editor.export();
+                    var drawFlowComponents = drawFlowExport["drawflow"]["Home"]["data"];
+
+                    data["components"] = [];
+
+                    if (drawFlowComponents != undefined) {
+                        for (var drawFlowComponentID in drawFlowComponents) {
+                            var drawFlowComponent = drawFlowComponents[drawFlowComponentID];
+                            console.log(drawFlowComponent);
+                            var component = drawFlowComponent.data;
+                            component["layout"] = {
+                                "x_coordinate": drawFlowComponent.pos_x,
+                                "y_coordinate": drawFlowComponent.pos_y
+                            }
+                            data["components"].push(component);
+                        }
+                    }
+                    resolve(data);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+
+    function addComponentToWhiteboard(compType) {
+
+        ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
+            if (selectedComponentRaw !== false) {
+                //var selectedComponent = structuredClone(componentsTemplate[compType]);
+                //console.log(selectedComponent);
+
+                var selectedComponent = ETL.util.deref(selectedComponentRaw);
+                console.log(selectedComponent);
+
+                var title = selectedComponent.title;
+                var icon = selectedComponent.icon || "fa-solid fa-question";
+                var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
+                var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+
+                var x_coordinate = 150;
+                var y_coordinate = 300;
+
+                var componentProperties = {
+                    "comp_type": compType
+                }
+
+                for (var propertyName in selectedComponent.properties) {
+                    var property = selectedComponent.properties[propertyName];
+                    //console.log(propertyName);
+                    //console.log(property);
+
+                    var propertyValue = undefined;
+                    var propertyDefault = property.default;
+
+                    if (property.type == "string") {
+                        propertyValue = propertyDefault || "";
+                    } else if (property.type == "object") {
+                        propertyValue = propertyDefault || {};
+                    } else if (property.type == "integer") {
+                        propertyValue = propertyDefault || 0;
+                    }
+
+                    if (propertyValue != undefined) {
+                        componentProperties[propertyName] = propertyValue;
+                    } else {
+                        componentProperties[propertyName] = {};
+                    }
+                }
+
+                if (componentProperties["name"] == "") {
+                    componentProperties["name"] = selectedComponent["title"];
+                }
+
+                var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+title+"</span>";
+
+                editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
+
+                $('#componentDialog').removeAttr('open');
+            }
+        });
+
+    }
+
+    $(document).on("click", function() {
+        $("#contextMenu").hide();
+    });
+
+
+    var drawflow = document.getElementById("drawflow");
+    var editor = new Drawflow(drawflow);
+    var contextMenuSelectedConnection;
+    var contextMenuSelectedComponent;
+
+    editor.editor_mode = "edit";
+    editor.zoom_value = 0.01;
+    editor.reroute = false;
+
+    editor.start();
+
+    editor.on("zoom", function(zoom_level) {
+        $("#zoomText").html(Math.round(zoom_level * 100) + "%");
+    });
+
+    editor.on("contextmenu", function(event) {
+
+        var component = $(event.srcElement).closest(".component");
+        var connection = $(event.srcElement).closest(".connection");
+
+        if (component.length == 1 || connection.length == 1) {
+
+            $("#contextMenu").css({ 
+                top: event.pageY, 
+                left: event.pageX + 10
+            }).show();
+
+            if (component.length == 1) {
+                contextMenuSelectedComponent = $(component).attr("id");
+                $("#contextMenuEditBtn").show();
+            } else {
+                contextMenuSelectedConnection = $(connection).attr("class").split(" ");
+                $("#contextMenuEditBtn").hide();
+            }
+        }
+
+        
+    });
+
 
     ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
         console.log(data);
@@ -177,6 +370,13 @@ if (jobID != "0") {
             window.location.href="./";
         }
     });
+
+
+
+
+
+
+
 
 
 } else {

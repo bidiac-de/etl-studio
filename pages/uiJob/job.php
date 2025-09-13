@@ -137,6 +137,29 @@
             </article>
         </dialog>
 
+        <dialog id="componentEditDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Component</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#componentEditDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
+                
+                <div id="componentEditDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveComponent"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
+            </article>
+        </dialog>
+
 
         <dialog id="deleteDialog">
             <article>
@@ -151,7 +174,11 @@
 
 
 
-        <script src="pages/uiJob/whiteboard.js"></script>
+        <div id="contextMenu">
+            <div id="contextMenuEditBtn"><i class="fa-solid fa-pen"></i> Edit</div>
+            <div id="contextMenuDeleteBtn"><i class="fa-solid fa-trash"></i> Delete</div>
+        </div>
+
 
         <?php
     } else {
