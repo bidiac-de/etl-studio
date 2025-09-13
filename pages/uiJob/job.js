@@ -120,7 +120,7 @@ if (jobID != "0") {
                     readOnly: true
                 });
 
-                codemirror.setSize("100%", "100%");
+                codemirror.setSize("100%", "calc(100% - 70px)");
 
                 codemirror.setValue(JSON.stringify(json, null, 2));
             });

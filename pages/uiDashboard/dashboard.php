@@ -3,6 +3,7 @@
 <header class="container-fluid">
     <div class="grid">
         <div>
+            <img class="logo" src="./img/icon.png" alt="">
             <h2>ETL Studio</h2>
         </div>
         <div style="text-align: right;">

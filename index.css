@@ -103,3 +103,10 @@ header .grid input, header .grid h2 {
     background-color: var(--pico-color-slate-950);
     border-bottom: 1px solid var(--pico-color-slate-900);
 }
+
+.logo {
+    float: left;
+    width: 32px;
+    height: 32px;
+    margin-right: 20px;
+}
