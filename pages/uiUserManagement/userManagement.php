@@ -1,6 +1,17 @@
 <?php
     $userID = intval(isset($_GET["userID"]) ? $_GET["userID"] : 0);
 
+    $username = "";
+    $fullname = "";
+
+    if ($userID > 0) {
+        $result = $db->query("SELECT * FROM users WHERE userID='$userID'");
+        while($row = $result->fetchArray()) {
+            $username = $row["username"];
+            $fullname = $row["fullname"];
+        }
+    }
+
 ?>
 
 <link rel="stylesheet" href="pages/uiUserManagement/userManagement.css">
@@ -22,11 +33,51 @@
 <br><br>
 <main class="container">
     
-    <h3 style="margin-right: 25px;"><i class="fa-solid fa-users"></i> Users</h3><br><br><br><br><br>
+    <h3 style="margin-right: 25px; float: left;"><i class="fa-solid fa-users"></i> Users</h3>
+    <button style="cursor: pointer;" onclick="window.location.href='?user&userID=0'">
+        <i class="fa-solid fa-plus"></i> Add new user
+    </button>
+    <hr>
+    <table class="striped" id="userTable">
+        <thead>
+            <tr>
+                <th class="tableFit"><i class="fa-solid fa-fingerprint"></i> ID</th>
+                <th style="width: 30%;"><i class="fa-solid fa-signature"></i> Username</th>
+                <th style="width: 30%;">Fullname</th>
+                <th id="thLastChange"><i class="fa-solid fa-clock-rotate-left"></i> Last login</th>
+                <th class="tableFit"></th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <?php
+                $result = $db->query("SELECT * FROM users ORDER BY userID DESC");
+                while($row = $result->fetchArray()) {
+                    /*$dt = new DateTime($row['jobCreated'], new DateTimeZone("UTC"));
+                    $dt->setTimezone(new DateTimeZone($timeZone));
+                    $createdDate = $dt->format("d.m.Y H:i");*/
+                    $lastLogin = "01.01.1970 01:00 Uhr";
+                    ?>
+                    <tr onclick="window.location.href='?user&userID=<?=$row['userID']?>'">
+                        <td><?=$row['userID']?></td>
+                        <td><?=$row['username']?></td>
+                        <td><?=$row["fullname"]?></td>
+                        <td><?=$lastLogin?></td>
+                        <td><i class="fa-solid fa-chevron-right"></i></td>
+                    </tr>
+                    <?php
+                }
+            ?>
+        </tbody>
+    </table>
+    <br><hr>
 
-    <h3 style="margin-right: 25px;"><i class="fa-solid fa-user-group"></i> Groups</h3><br><br><br><br><br>
+    <!--<h3 style="margin-right: 25px;"><i class="fa-solid fa-user-group"></i> Groups</h3>
+    <hr>
+    <br><br><br><br><br>
 
-    <h3 style="margin-right: 25px;"><i class="fa-solid fa-shield"></i> Roles</h3><br><br><br>
+    <h3 style="margin-right: 25px;"><i class="fa-solid fa-shield"></i> Roles</h3>
+    <hr>
+    <br><br><br>-->
 
 </main>
 
@@ -46,63 +97,35 @@
         <div style="padding-left: 24px; padding-right: 24px;">
             <form method="POST">
 
-                <input type="hidden" name="userID" id="serverID" value="<?=$userID?>">
+                
 
                 <div class="row">
                     <div class="col-sm-4 col-xs-12 labelColumn">
-                        Display name
+                        User ID
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input name="description" type="text" id="description" placeholder="Display name" value=""/>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn">
-                        Protocol
-                    </div>
-                    <div class="col-sm-8 col-xs-12">
-                        <select name="protocol" aria-label="Protocol" id="protocol">
-                            <option disabled value="">Protocol</option>
-                            <option>https</option>
-                            <option>http</option>
-                        </select>
+                        <input type="text" name="userID" id="userID" value="<?=$userID?>" readonly="readonly" disabled>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-sm-4 col-xs-12 labelColumn">
-                        Hostname
+                        Username
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input type="text" name="host" placeholder="Hostname" aria-label="Hostname" id="hostname" value="">
+                        <input name="username" type="text" id="username" placeholder="Username" value="<?=$username?>"/>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-sm-4 col-xs-12 labelColumn">
-                        Port
+                        Fullname
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input type="number" name="port" placeholder="Port" aria-label="Port" id="port" min="1" max="65535" step="1" value="">
+                        <input name="fullname" type="text" id="fullname" placeholder="Fullname" value="<?=$fullname?>"/>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn">
-                        Access Key
-                    </div>
-                    <div class="col-sm-8 col-xs-12">
-                        <textarea name="key" rows="3" placeholder="Access Key" aria-label="Access Key" style="resize: none;" id="key"></textarea>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn"></div>
-                    <div class="col-sm-8 col-xs-12">
-                        <p class="pico-color-red-450 errorMsg"><i class="fa-solid fa-xmark"></i> No connection possible!</p>
-                    </div>
-                </div>
 
             </form>
 
@@ -112,12 +135,11 @@
                 <?php
                 if ($userID > 0) {
                 ?>
-                <button class="secondary" id="btnServerDelete" onclick="window.location.href='?user&delete&userID='+<?=$userID?>"><i class="fa-solid fa-trash"></i> Delete</button>
+                <button class="secondary" id="btnUserDelete" onclick="window.location.href='?user&delete&userID='+<?=$userID?>"><i class="fa-solid fa-trash"></i> Delete</button>
                 <?php
                 }
                 ?>
-                <button class="secondary" id="btnServerFormReset"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-                <button id="btnServerAdd" disabled>
+                <button id="btnUserAdd">
                     <?php
                     if ($userID > 0) {
                     ?>

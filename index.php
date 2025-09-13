@@ -17,17 +17,18 @@
         <link rel="stylesheet" href="./libs/drawflow-dist-0.0.60/drawflow.min.css">
         <link rel="stylesheet" href="./libs/drawflow-dist-0.0.60/drawflow-style.css">
         <link rel="stylesheet" href="./libs/tabler-icons-3.34.1/dist/tabler-icons.min.css">
+        <link rel="stylesheet" href="./libs/codemirror-5.65.13/lib/codemirror.css">
+        <link rel="stylesheet" href="./libs/codemirror-5.65.13/theme/ayu-mirage.css">
         <link rel="stylesheet" href="./index.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/base16-dark.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/ayu-mirage.css">
 
-        <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/javascript/javascript.js"></script>
-        
+        <link rel="shortcut icon" href="./img/icon.png" type="image/png">
+
+        <script src="./libs/codemirror-5.65.13/lib/codemirror.js"></script>
+        <script src="./libs/codemirror-5.65.13/mode/javascript.js"></script>
         <script src="./libs/jquery-3.7.1.min.js"></script>
         <script src="./libs/drawflow-dist-0.0.60/drawflow.min.js"></script>
         <script src="./index.js"></script>
+
         <title>ETL Studio</title>
     </head>
     <body>

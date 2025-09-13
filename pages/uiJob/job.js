@@ -108,7 +108,7 @@ if (jobID != "0") {
 
             exportToJson().then(function(json) {
 
-                codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), {
+                var codemirrorOptions = {
                     mode: { 
                         name: "javascript", 
                         json: true 
@@ -116,13 +116,17 @@ if (jobID != "0") {
                     lineNumbers: true,
                     matchBrackets: true,
                     autoCloseBrackets: true,
-                    theme: "ayu-mirage",
                     readOnly: true
-                });
+                };
 
+                if (darktheme) {
+                    codemirrorOptions.theme = "ayu-mirage";
+                }
+
+                codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), codemirrorOptions);
                 codemirror.setSize("100%", "calc(100% - 70px)");
-
                 codemirror.setValue(JSON.stringify(json, null, 2));
+
             });
         } else {
             codemirror.toTextArea();

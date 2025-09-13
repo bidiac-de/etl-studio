@@ -206,11 +206,17 @@ body {
     position: absolute;
     display: none;
     margin: 0;
+    background: var(--pico-color-slate-50);
+    border: 2px solid var(--pico-color-azure-500);
+    color: var(--pico-color-slate-850);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+[data-theme='dark'] #contextMenu {
     background: var(--pico-color-slate-950);
     border: 2px solid var(--pico-color-azure-750);
-    border-radius: 10px;
     color: var(--pico-color-slate-150);
-    z-index: 1000;
 }
 
 #contextMenu div {
@@ -222,6 +228,10 @@ body {
 }
 
 #contextMenu div:not(:last-child) {
+    border-bottom: 1px solid var(--pico-color-slate-150);
+}
+
+[data-theme='dark'] #contextMenu div:not(:last-child) {
     border-bottom: 1px solid var(--pico-color-slate-900);
 }
 
