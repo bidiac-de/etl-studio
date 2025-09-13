@@ -279,19 +279,17 @@ if (jobID != "0") {
                     "comp_type": compType
                 }
 
-                for (var propertyName in selectedComponent.properties) {
-                    var property = selectedComponent.properties[propertyName];
-                    //console.log(propertyName);
-                    //console.log(property);
-
+                for (var property of selectedComponent.properties) {
+                    var propertyName = property.name;
                     var propertyValue = undefined;
-                    var propertyDefault = property.default;
+                    var propertyDefault = property.schema.default;
+                    var propertyType = property.schema.type;
 
-                    if (property.type == "string") {
+                    if (propertyType == "string") {
                         propertyValue = propertyDefault || "";
-                    } else if (property.type == "object") {
+                    } else if (propertyType == "object") {
                         propertyValue = propertyDefault || {};
-                    } else if (property.type == "integer") {
+                    } else if (propertyType == "integer") {
                         propertyValue = propertyDefault || 0;
                     }
 
@@ -306,7 +304,11 @@ if (jobID != "0") {
                     componentProperties["name"] = selectedComponent["title"];
                 }
 
-                var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+title+"</span>";
+                while (componentNameExists(componentProperties["name"])) {
+                    componentProperties["name"] += "_new";
+                }
+
+                var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+componentProperties["name"]+"</span>";
 
                 editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
 
@@ -315,6 +317,19 @@ if (jobID != "0") {
         });
 
     }
+
+
+    function componentNameExists(name) {
+        var data = editor.export().drawflow.Home.data;
+        for (var i in data) {
+            var component = data[i];
+            if (component.data.name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     $(document).on("click", function() {
         $("#contextMenu").hide();
@@ -374,13 +389,6 @@ if (jobID != "0") {
             window.location.href="./";
         }
     });
-
-
-
-
-
-
-
 
 
 } else {

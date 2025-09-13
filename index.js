@@ -244,16 +244,11 @@ ETL.render.componentEdit = function(componentID) {
         ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(componentFormRaw) {
             var data = ETL.util.deref(componentFormRaw);
             var html = "";
-            console.log(data);
 
             if (data.properties != undefined) {
 
-                for (var propertyName in data.properties) {
-                    //var propertyName = property["name"];
-                    var property = data.properties[propertyName];
-                    console.log(property);
-                    console.log(propertyName);
-                    console.log(selectedEditComponent.data[propertyName]);
+                for (var property of data.properties) {
+                    var propertyName = property["name"];
                     html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
                 }
                 resolve(html);             

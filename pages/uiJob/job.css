@@ -28,7 +28,7 @@ body {
     overflow: scroll;
 }
 
-#settingsDialogMain {
+#settingsDialogMain, #componentEditDialogMain {
     height: 40vh;
     max-height: 40vh;
     overflow: scroll;
