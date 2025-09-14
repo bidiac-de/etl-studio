@@ -45,7 +45,7 @@ if (jobID != "0") {
         });
     });
 
-    $("#openComponentsDialog").click(function() {
+    $("#openComponentsDialog").click(function(event) {
         $("#componentsTable").html("");
         $("#componentDialog").attr("open", "");
         ETL.api.get(serverID, "/configs/component_types/").then(function(componentTypes) {
@@ -125,7 +125,7 @@ if (jobID != "0") {
 
                 codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), codemirrorOptions);
                 codemirror.setSize("100%", "calc(100% - 70px)");
-                codemirror.setValue(JSON.stringify(json, null, 2));
+                codemirror.setValue(JSON.stringify(json, null, 2).replace(/"([^"]+)":/g, '$1:'));
 
             });
         } else {
@@ -221,6 +221,32 @@ if (jobID != "0") {
                     $("#btnSaveComponent").attr("disabled", true);
                 }
             });
+        }
+    });
+
+    $("#btnSaveComponent").click(function() {
+        if (contextMenuSelectedComponent != undefined) {
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            var newData = ETL.util.getFormData($("#componentEditDialogMain"));
+            var selectedNode = editor.getNodeFromId(selectedComponentID);
+            var updateData = selectedNode.data;
+            for (var key in newData) {
+                var value = newData[key];
+                updateData[key] = value;
+            }
+            editor.updateNodeDataFromId(selectedComponentID, updateData);
+            $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
+            $('#componentEditDialog').removeAttr('open');
+        }
+    });
+
+    $(document).on("dblclick", ".component", function(event) {
+        console.log(event);
+        var component = $(event.currentTarget).closest(".component");
+        console.log(component);
+        if (component.length == 1) {
+            contextMenuSelectedComponent = $(component).attr("id");
+            $("#contextMenuEditBtn").click();
         }
     });
 
@@ -372,12 +398,10 @@ if (jobID != "0") {
             }
         }
 
-        
     });
 
 
     ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
-        console.log(data);
         if (data !== false) {
             var jobName = data["name"];
             var jobLastChanged = ETL.util.formatDate(new Date(data["metadata_"]["timestamp"]));
@@ -397,8 +421,6 @@ if (jobID != "0") {
     $("#newJobSaveButton").click(function() {
         var postData = ETL.util.getFormData($("#jobDetailsFieldset"));
         var serverID = $("#newJobServerSelection").find(":selected").val();
-
-        console.log(postData);
 
         ETL.api.post(serverID, "/jobs/", postData).then(function(data) {
             console.log(data);

@@ -271,36 +271,15 @@ ETL.util.resolveLocal = function(schema, ref) {
     return path.reduce((acc, k) => acc && acc[k], schema);
 }
 
-ETL.util.deref = function(obj, root = obj) {
-    if (Array.isArray(obj)) return obj.map(i => ETL.util.deref(i, root));
-    if (obj && typeof obj === "object") {
-        if (obj.$ref && typeof obj.$ref === "string" && obj.$ref.startsWith("#/")) {
-            return ETL.util.deref(ETL.util.resolveLocal(root, obj.$ref), root);
-        }
-        const out = {};
-        for (const k of Object.keys(obj)) out[k] = ETL.util.deref(obj[k], root);
-        return out;
-    }
-    return obj;
-}
-
-ETL.util.resolveLocal = function(schema, ref) {
-    const path = ref.replace(/^#\//, "").split("/");
-    return path.reduce((acc, k) => acc && acc[k], schema);
-}
-
 ETL.util.deref = function(obj, root = obj, seen = new WeakMap()) {
     if (Array.isArray(obj)) {
         return obj.map(i => ETL.util.deref(i, root, seen));
     }
 
     if (obj && typeof obj === "object") {
-        // Zyklusprüfung
         if (seen.has(obj)) {
             return seen.get(obj);
         }
-
-        // Lokales $ref auflösen
         if (obj.$ref && typeof obj.$ref === "string" && obj.$ref.startsWith("#/")) {
             const resolved = ETL.util.resolveLocal(root, obj.$ref);
             if (!resolved) return null; // falls ungültig
@@ -308,7 +287,7 @@ ETL.util.deref = function(obj, root = obj, seen = new WeakMap()) {
         }
 
         const out = Array.isArray(obj) ? [] : {};
-        seen.set(obj, out); // merken, bevor wir Felder expandieren
+        seen.set(obj, out);
 
         for (const k of Object.keys(obj)) {
             out[k] = ETL.util.deref(obj[k], root, seen);

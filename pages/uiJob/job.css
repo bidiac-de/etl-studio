@@ -140,7 +140,7 @@ body {
 
 #consoleText {
     font-family: monospace;
-    font-size: small;
+    font-size: medium;
     position: absolute;
     left: 0;
     top: 26px;
