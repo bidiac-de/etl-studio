@@ -3,7 +3,7 @@ function reloadJobListTable() {
     $("#jobTable").hide();
     $("#jobTableBody").html("");
 
-    console.log(server);
+    //console.log(server);
 
     for (var serverID in server) {
         serverInstance = server[serverID];
@@ -12,7 +12,7 @@ function reloadJobListTable() {
         ETL.api.get(serverID, "/jobs/").then(function(jobsList) {
             if (jobsList !== false) {
                 for (var job of jobsList) {
-                    console.log(job);
+                    //console.log(job);
                     var jobID = job["id"];
                     var jobName = job["name"];
                     var lastModified = ETL.util.formatDate(new Date(job["metadata_"]["timestamp"]));
