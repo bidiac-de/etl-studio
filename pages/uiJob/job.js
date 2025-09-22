@@ -67,14 +67,9 @@ if (jobID != "0") {
                         var compType = component["comp-type"];
                         var icon = component["icon"];
 
-                        
-
                         if (typeof icon != "string") {
                             icon = "fa-solid fa-box";
                         }
-
-                        console.log(component);
-                        console.log(icon);
 
                         componentsTemplate[compType] = component;
                         componentTable += "<tr><td><i class=\""+icon+"\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
@@ -281,6 +276,26 @@ if (jobID != "0") {
                                 "x_coordinate": drawFlowComponent.pos_x,
                                 "y_coordinate": drawFlowComponent.pos_y
                             }
+                            component["routes"] = {};
+                            component["routes"]["out"] = [];
+
+                            var outputs = drawFlowComponent.outputs;
+                            for (var outputName in outputs) {
+                                var output = outputs[outputName];
+                                var connections = output.connections;
+                                for (var connectionNo in connections) {
+                                    var connection = connections[connectionNo];
+                                    var nodeID = connection.node;
+                                    var inputName = connection.output;
+                                    var to = editor.getNodeFromId(nodeID).data.name;
+
+                                    component["routes"]["out"].push({
+                                        "to": to,
+                                        "in_port": inputName
+                                    });
+                                }
+                            }
+                                
                             data["components"].push(component);
                         }
                     }
