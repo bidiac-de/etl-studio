@@ -65,9 +65,19 @@ if (jobID != "0") {
                         var component = ETL.util.deref(componentPromise.value);
                         var componentTitle = component.title;
                         var compType = component["comp-type"];
+                        var icon = component["icon"];
+
+                        
+
+                        if (typeof icon != "string") {
+                            icon = "fa-solid fa-box";
+                        }
+
+                        console.log(component);
+                        console.log(icon);
 
                         componentsTemplate[compType] = component;
-                        componentTable += "<tr><td><i class=\"fa-solid fa-box\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
+                        componentTable += "<tr><td><i class=\""+icon+"\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
 
                         
                     }
@@ -370,6 +380,9 @@ if (jobID != "0") {
     editor.editor_mode = "edit";
     editor.zoom_value = 0.01;
     editor.reroute = false;
+    editor.snap = true;
+    editor.grid = true;
+    editor.grid_size = 20;
 
     editor.start();
 
