@@ -40,7 +40,7 @@
             <button class="outline secondary" data-tooltip="JSON" data-placement="bottom" id="btnJSON">
                 <i class="fa-solid fa-code"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" id="btnSave" disabled>
+            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" id="btnSave">
                 <i class="fa-solid fa-floppy-disk"></i>
             </button>
             <button id="openComponentsDialog">

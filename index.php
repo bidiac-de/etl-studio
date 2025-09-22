@@ -19,6 +19,7 @@
         <link rel="stylesheet" href="./libs/tabler-icons-3.34.1/dist/tabler-icons.min.css">
         <link rel="stylesheet" href="./libs/codemirror-5.65.13/lib/codemirror.css">
         <link rel="stylesheet" href="./libs/codemirror-5.65.13/theme/ayu-mirage.css">
+        <link rel="stylesheet" href="./libs/devicon-master/devicon.min.css">
         <link rel="stylesheet" href="./index.css">
 
         <link rel="shortcut icon" href="./img/icon.png" type="image/png">
