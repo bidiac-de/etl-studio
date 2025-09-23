@@ -130,7 +130,8 @@ if (jobID != "0") {
 
                 codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), codemirrorOptions);
                 codemirror.setSize("100%", "calc(100% - 70px)");
-                codemirror.setValue(JSON.stringify(json, null, 2).replace(/"([^"]+)":/g, '$1:'));
+                //codemirror.setValue(JSON.stringify(json, null, 2).replace(/"([^"]+)":/g, '$1:'));
+                codemirror.setValue(JSON.stringify(json, null, 2));
 
             });
         } else {
@@ -268,38 +269,75 @@ if (jobID != "0") {
                     data["components"] = [];
 
                     if (drawFlowComponents != undefined) {
+
+                        var promiseArray = [];
+
                         for (var drawFlowComponentID in drawFlowComponents) {
-                            var drawFlowComponent = drawFlowComponents[drawFlowComponentID];
-                            console.log(drawFlowComponent);
-                            var component = drawFlowComponent.data;
-                            component["layout"] = {
-                                "x_coordinate": drawFlowComponent.pos_x,
-                                "y_coordinate": drawFlowComponent.pos_y
-                            }
-                            component["routes"] = {};
-                            component["routes"]["out"] = [];
 
-                            var outputs = drawFlowComponent.outputs;
-                            for (var outputName in outputs) {
-                                var output = outputs[outputName];
-                                var connections = output.connections;
-                                for (var connectionNo in connections) {
-                                    var connection = connections[connectionNo];
-                                    var nodeID = connection.node;
-                                    var inputName = connection.output;
-                                    var to = editor.getNodeFromId(nodeID).data.name;
+                            (function(drawFlowComponentID) {
+                                promiseArray.push(new Promise(async function(resolve2, reject2) {
 
-                                    component["routes"]["out"].push({
-                                        "to": to,
-                                        "in_port": inputName
-                                    });
-                                }
-                            }
-                                
-                            data["components"].push(component);
+                                    var drawFlowComponent = drawFlowComponents[drawFlowComponentID];
+                                    var component = drawFlowComponent.data;
+                                    component["layout"] = {
+                                        "x_coordinate": drawFlowComponent.pos_x,
+                                        "y_coordinate": drawFlowComponent.pos_y
+                                    }
+                                    component["routes"] = {};
+                                    component["routes"]["out"] = [];
+
+                                    var outputs = drawFlowComponent.outputs;
+                                    for (var outputName in outputs) {
+                                        var output = outputs[outputName];
+                                        var connections = output.connections;
+                                        for (var connectionNo in connections) {
+                                            var connection = connections[connectionNo];
+                                            var nodeID = connection.node;
+                                            var node = editor.getNodeFromId(nodeID);
+                                            var to = node.data.name;
+                                            var toCompType = node.data["comp_type"];
+
+                                            var compTypeData = await ETL.api.get(serverID, "/configs/"+toCompType+"/full");
+                                            if (compTypeData != false) {
+                                                if (compTypeData["x-class"] != undefined && compTypeData["x-class"]["input_ports"] != undefined) {
+                                                    if (compTypeData["x-class"]["input_ports"][connectionNo] != undefined) {
+                                                        var inputName = compTypeData["x-class"]["input_ports"][connectionNo]["name"];
+                                                        component["routes"]["out"].push({
+                                                            "to": to,
+                                                            "in_port": inputName
+                                                        });
+                                                    } 
+                                                }
+                                            }
+                                        }
+                                    }
+                                    resolve2(component);
+                                }));
+                            })(drawFlowComponentID);
+                            
                         }
+
+                        Promise.all(promiseArray).then(function(components) {
+                            for (var component of components) {
+                                // delete empty objects and arrays
+                                for (var key in component) {
+                                    var value = component[key];
+                                    if (typeof value == "object") {
+                                        if (Object.keys(value) == 0) {
+                                            delete component[key];
+                                        }
+                                    } else if (typeof value == "array") {
+                                        if (x.length == 0) {
+                                            delete component[key];
+                                        }
+                                    }
+                                }
+                                data["components"].push(component);
+                            }
+                            console.log(data);
+                            resolve(data);
+                        });
                     }
-                    resolve(data);
                 } else {
                     resolve(false);
                 }
