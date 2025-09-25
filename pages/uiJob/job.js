@@ -104,6 +104,13 @@ if (jobID != "0") {
         });
     });
 
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            $("#btnSave").click();
+        }
+    });
+
     $("#btnJSON").click(function() {
         if (codemirror == undefined) {
 
@@ -253,6 +260,7 @@ if (jobID != "0") {
             editor.updateNodeDataFromId(selectedComponentID, updateData);
             $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
             $('#componentEditDialog').removeAttr('open');
+            editor.updateConnectionNodes(contextMenuSelectedComponent);
         }
     }
 

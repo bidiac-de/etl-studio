@@ -235,46 +235,6 @@ ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
             jobDetailsFieldsetHTML += "<option "+selected+" value='"+option+"'>"+option+"</option>";
         }
         jobDetailsFieldsetHTML += "</select></label>";
-    } else if (schema.type == "object") {
-
-        if (propertyName == "out_port_schemas") {
-            var fieldItems = schema.additionalProperties.properties[0].schema.items.properties;
-            //console.log(fieldItems);
-
-            jobDetailsFieldsetHTML += "<label>"+title+"</label>";
-            jobDetailsFieldsetHTML += "<table id='tableOutPortSchema'><tr>";
-            jobDetailsFieldsetHTML += "<td>out</td>";
-            jobDetailsFieldsetHTML += "<td><button class='btnAddOutPortSchema secondary'><i class='fa-solid fa-pencil'></i> Edit schema</button></td>";
-            jobDetailsFieldsetHTML += "<tr></table>";
-
-            /*jobDetailsFieldsetHTML += "<label>"+title+"<fieldset role='group'>";
-
-
-            for (var fieldItem of fieldItems) {
-                var fieldItemTitle = fieldItem.schema.title;
-                var fieldItemRequired = fieldItem.required;
-                var fieldItemType = fieldItem.schema.type;
-
-                if (fieldItemType == "string") {
-                    jobDetailsFieldsetHTML += "<input type='text' placeholder='"+fieldItemTitle+"' autocomplete='off' />";
-                } else if (fieldItemType == "select") {
-                    jobDetailsFieldsetHTML += "<select aria-label='"+fieldItemTitle+"'>";
-                    for (var option of fieldItem.schema.enum) {
-                        jobDetailsFieldsetHTML += "<option value='"+option+"'>"+option+"</option>";
-                    }
-                    jobDetailsFieldsetHTML += "</select>";
-                } else if (fieldItemType == "boolean") {
-                    jobDetailsFieldsetHTML += "<label class='checkBoxLabel'>"+fieldItemTitle+"<input type='checkbox' /></label>";
-                }
-            }
-
-            jobDetailsFieldsetHTML += "<input type='submit' value='Add' />";
-            jobDetailsFieldsetHTML += "</fieldset></label>";*/
-
-
-        }
-
-        
     }
 
     return jobDetailsFieldsetHTML;
@@ -329,12 +289,36 @@ ETL.render.componentEdit = function(componentID) {
             var data = ETL.util.deref(componentFormRaw);
             var html = "";
 
+            console.log(data);
+
             if (data.properties != undefined) {
 
                 for (var property of data.properties) {
                     var propertyName = property["name"];
+                    var schema = property["schema"];
+                    var title = schema["title"] || "";
+
+                    if (schema.type == "object") {
+                        if (propertyName == "out_port_schemas") {
+                            html += "<label>"+title+"</label>";
+                            html += "<table id='tableOutPortSchema'>";
+                            if (data["x-class"] != undefined && data["x-class"]["output_port_names"] != undefined) {
+                                for (var portName of data["x-class"]["output_port_names"]) {
+                                    html += "<tr><td>"+portName+"</td>";
+                                    html += "<td><button class='btnAddOutPortSchema secondary'><i class='fa-solid fa-pencil'></i> Edit schema</button></td></tr>";
+                                }
+                            }
+                            html += "</table>";
+                        }
+                    }
+
                     html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
+                    
                 }
+
+                
+
+
                 resolve(html);             
             } else {
                 resolve(false);
