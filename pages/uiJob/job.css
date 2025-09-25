@@ -27,7 +27,7 @@ body {
 }
 
 #componentsTable td:first-child div {
-    background: var(--pico-color-slate-650);
+    background: var(--pico-color-slate-150);
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
@@ -35,6 +35,10 @@ body {
     line-height: 40px;
     text-align: center;
     border-radius: 40px;
+}
+
+[data-theme='dark'] #componentsTable td:first-child div {
+    background: var(--pico-color-slate-650);
 }
 
 #componentsTable td:first-child div i {
