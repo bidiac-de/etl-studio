@@ -98,7 +98,7 @@ if (jobID != "0") {
     $("#btnSave").click(function() {
         exportToJson().then(function(json) {
             ETL.api.put(serverID, "/jobs/"+jobID, json, true).then(function(data) {
-                console.log(data);
+                //console.log(data);
             });
         });
     });
@@ -151,7 +151,7 @@ if (jobID != "0") {
 
     $("#btnSaveJobSettings").click(function() {
         var postData = ETL.util.getFormData($("#settingsDialogMain"));
-        console.log(postData);
+        //console.log(postData);
 
         ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
             if (data !== false) {
@@ -159,7 +159,7 @@ if (jobID != "0") {
                     data[key] = postData[key];
                 }
                 ETL.api.put(serverID, "/jobs/"+jobID, postData).then(function(data) {
-                    console.log(data);
+                    //console.log(data);
                     if (data !== false) {
                         window.location.reload();
                     } else {
@@ -244,9 +244,9 @@ if (jobID != "0") {
     });
 
     $(document).on("dblclick", ".component", function(event) {
-        console.log(event);
+        //console.log(event);
         var component = $(event.currentTarget).closest(".component");
-        console.log(component);
+        //console.log(component);
         if (component.length == 1) {
             contextMenuSelectedComponent = $(component).attr("id");
             $("#contextMenuEditBtn").click();
@@ -263,7 +263,7 @@ if (jobID != "0") {
             if (updateData["out_port_schemas"] != undefined && updateData["out_port_schemas"][selectedOutPortName] != undefined && updateData["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
                 tmpFieldSettings = updateData["out_port_schemas"][selectedOutPortName]["fields"];
             }
-            console.log(tmpFieldSettings);
+            //console.log(tmpFieldSettings);
             openFieldDialog(selectedComponentID, selectedOutPortName);
         }
     });
@@ -320,7 +320,7 @@ if (jobID != "0") {
 
         ETL.api.get(serverID, "/configs/"+compType+"/full").then(function(compTypeData) {
             compTypeData = ETL.util.deref(compTypeData);
-            console.log(compTypeData);
+            //console.log(compTypeData);
 
             var fieldDef = compTypeData["$defs"]["FieldDef"];
             var fieldDefProperties = fieldDef.properties;
@@ -373,6 +373,11 @@ if (jobID != "0") {
 
 
 
+    function importFromJson(json = {}) {
+        
+    }
+
+
 
     function exportToJson() {
         return new Promise(function(resolve, reject) {
@@ -415,9 +420,11 @@ if (jobID != "0") {
 
                                             var compTypeData = await ETL.api.get(serverID, "/configs/"+toCompType+"/full");
                                             if (compTypeData != false) {
+                                                //console.log(compTypeData);
                                                 if (compTypeData["x-class"] != undefined && compTypeData["x-class"]["input_ports"] != undefined) {
-                                                    if (compTypeData["x-class"]["input_ports"][connectionNo] != undefined) {
-                                                        var inputName = compTypeData["x-class"]["input_ports"][connectionNo]["name"];
+                                                    var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
+                                                    if (compTypeData["x-class"]["input_ports"][inputPortConnectionNo] != undefined) {
+                                                        var inputName = compTypeData["x-class"]["input_ports"][inputPortConnectionNo]["name"];
                                                         component["routes"]["out"].push({
                                                             "to": to,
                                                             "in_port": inputName
@@ -435,20 +442,48 @@ if (jobID != "0") {
 
                         Promise.all(promiseArray).then(function(components) {
                             for (var component of components) {
+                                data["components"].push(component);
+                            }
+                            for (var i in data["components"]) {
+                                var component = data["components"][i];
+                                
                                 // delete empty objects and arrays
                                 for (var key in component) {
                                     var value = component[key];
                                     if (typeof value == "object") {
                                         if (Object.keys(value) == 0) {
-                                            delete component[key];
+                                            delete data["components"][i][key];
                                         }
                                     } else if (typeof value == "array") {
                                         if (x.length == 0) {
-                                            delete component[key];
+                                            delete data["components"][i][key];
                                         }
                                     }
                                 }
-                                data["components"].push(component);
+
+                                if (typeof component["routes"] == "object" && typeof component["out_port_schemas"] == "object") {
+                                    for (var outputName in component["routes"]) {
+                                        if (outputName in component["out_port_schemas"]) {
+                                            var fields = component["out_port_schemas"][outputName]["fields"];
+                                            for (var connection of component["routes"][outputName]) {
+                                                var to = connection.to;
+                                                var inputName = connection["in_port"];
+                                                for (var j in data["components"]) {
+                                                    if (data["components"][j]["name"] == to) {
+                                                        if (data["components"][j]["in_port_schemas"] == undefined) {
+                                                            data["components"][j]["in_port_schemas"] = {};
+                                                        }
+                                                        data["components"][j]["in_port_schemas"][inputName] = {
+                                                            "fields": fields
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
                             console.log(data);
                             resolve(data);
@@ -466,11 +501,9 @@ if (jobID != "0") {
 
         ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
             if (selectedComponentRaw !== false) {
-                //var selectedComponent = structuredClone(componentsTemplate[compType]);
-                //console.log(selectedComponent);
 
                 var selectedComponent = ETL.util.deref(selectedComponentRaw);
-                console.log(selectedComponent);
+                //console.log(selectedComponent);
 
                 var title = selectedComponent.title;
                 var icon = selectedComponent.icon || "fa-solid fa-question";
@@ -606,7 +639,7 @@ if (jobID != "0") {
         var serverID = $("#newJobServerSelection").find(":selected").val();
 
         ETL.api.post(serverID, "/jobs/", postData).then(function(data) {
-            console.log(data);
+            //console.log(data);
             if (data !== false) {
                 window.location.href="./?serverID="+serverID+"&job="+data;
             }
