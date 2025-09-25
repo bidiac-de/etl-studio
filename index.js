@@ -74,15 +74,23 @@ ETL.api.onError = function(data) {
         var loc = errorDetail.loc || [];
         title = data.statusText || "Server Error";
 
-        /*var htmlErrorMsg = "<nav aria-label='breadcrumb'><ul>";
-        for (var item of loc) {
-            htmlErrorMsg += "<li>"+item+"</li>";
+        htmlErrorMsg = "<br>";
+        if (loc.length > 0) {
+            htmlErrorMsg += "<kbd>Location";
+            for (var item of loc) {
+                htmlErrorMsg += ' <i class="fa-solid fa-chevron-right"></i> ' + item;
+            }
+            htmlErrorMsg += "</kbd><br><br>";
         }
-        htmlErrorMsg += "</ul></nav><br>";*/
-        htmlErrorMsg = "<kbd>"+msg+"</kbd>";
+
+        if (errorDetail.input != undefined && errorDetail.input.name != undefined) {
+            htmlErrorMsg += "<kbd>Component: "+errorDetail.input.name+"</kbd><br><br>";
+        }
+        
+        htmlErrorMsg += "<kbd>Message: "+msg+"</kbd>";
     }
 
-    ETL.util.alert(title, htmlErrorMsg);
+    ETL.util.alert("<i class='fa-solid fa-triangle-exclamation pico-color-red-550'></i> Error: " + title, htmlErrorMsg);
     
 }
 
