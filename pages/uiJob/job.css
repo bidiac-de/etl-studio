@@ -7,6 +7,10 @@ body {
     border-color: var(--pico-color-red-400);
 }
 
+#btnExecuteScriptSummary {
+    width: 46.5px;
+}
+
 .connectionLamp {
     margin-left: 20px;
     margin-right: 10px;
@@ -226,7 +230,7 @@ body {
     display: none;
 }
 
-#contextMenu {
+#contextMenu, #executionMenu {
     position: absolute;
     display: none;
     margin: 0;
@@ -237,13 +241,13 @@ body {
     z-index: 1000;
 }
 
-[data-theme='dark'] #contextMenu {
+[data-theme='dark'] #contextMenu, [data-theme='dark'] #executionMenu {
     background: var(--pico-color-slate-950);
     border: 2px solid var(--pico-color-azure-750);
     color: var(--pico-color-slate-150);
 }
 
-#contextMenu div {
+#contextMenu div, #executionMenu div {
     cursor: pointer;
     padding-top: 8px;
     padding-bottom: 8px;
@@ -251,19 +255,19 @@ body {
     padding-right: 25px;
 }
 
-#contextMenu div:not(:last-child) {
+#contextMenu div:not(:last-child), #executionMenu div:not(:last-child) {
     border-bottom: 1px solid var(--pico-color-slate-150);
 }
 
-[data-theme='dark'] #contextMenu div:not(:last-child) {
+[data-theme='dark'] #contextMenu div:not(:last-child), [data-theme='dark'] #executionMenu div:not(:last-child) {
     border-bottom: 1px solid var(--pico-color-slate-900);
 }
 
-#contextMenu i {
+#contextMenu i, #executionMenu i {
     margin-right: 5px;
 }
 
-#contextMenu div:hover {
+#contextMenu div:hover, #executionMenu div:hover  {
     color: var(--pico-color-slate-400);
 }
 

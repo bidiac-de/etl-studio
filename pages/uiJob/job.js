@@ -31,12 +31,39 @@ if (jobID != "0") {
         $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
     });
 
-    $("#btnExecuteScript").click(function() {
-        $("#console").slideDown(50);
+    $("#btnExecuteScript").click(function(event) {
+
+        allowExecutionMenuHide = false;
+        $("#executionMenu").css({ 
+            top: event.pageY + 15, 
+            left: event.pageX - 75
+        }).show();
+
+        setTimeout(function() {
+            allowExecutionMenuHide = true;
+        }, 1000);
+        
+        /*$("#console").slideDown(50);
         ETL.console.log("upload job id " + jobID + " to execution server", true, "");
         setInterval(function() {
             ETL.console.log(".", false, "");
-        }, 1000);
+        }, 1000);*/
+
+        /*ETL.api.post(serverID, "/execution/"+jobID, {}, true).then(function(data) {
+            console.log(data);
+        });*/
+
+    });
+
+    $(".btnExecutionMenu").click(function() {
+        var environment = $(this).attr("environment");
+        $("#executionMenu").hide();
+
+        ETL.api.post(serverID, "/execution/"+jobID, {
+            environment: environment
+        }, true).then(function(data) {
+            console.log(data);
+        });
     });
 
     $("#btnConfirmDelete").click(function() {
@@ -404,7 +431,7 @@ if (jobID != "0") {
                 }
 
                 for (var component of components) {
-                    console.log(component);
+                    //console.log(component);
 
                     var outputID = getComponentIdFromName(component.name);
                     var compType = component["comp_type"];
@@ -427,7 +454,7 @@ if (jobID != "0") {
                             if (outputNameDrawflow != undefined) {
                                 var connections = component.routes[outputName];
                                 for (var connection of connections) {
-                                    console.log(connection);
+                                    //console.log(connection);
 
                                     var inputID = getComponentIdFromName(connection.to);
                                     var inputName = connection["in_port"];
@@ -447,7 +474,7 @@ if (jobID != "0") {
                                     }
 
                                     if (inputNameDrawflow != undefined) {
-                                        console.log(outputID, outputNameDrawflow, inputID, inputNameDrawflow);
+                                        //console.log(outputID, outputNameDrawflow, inputID, inputNameDrawflow);
                                         editor.addConnection(outputID, inputID, outputNameDrawflow, inputNameDrawflow);
                                     }
 
@@ -718,9 +745,12 @@ if (jobID != "0") {
 
     $(document).on("click", function() {
         $("#contextMenu").hide();
+        if (allowExecutionMenuHide) {
+            $("#executionMenu").hide();
+        }
     });
 
-
+    var allowExecutionMenuHide = true;
     var drawflow = document.getElementById("drawflow");
     var editor = new Drawflow(drawflow);
     var contextMenuSelectedConnection;

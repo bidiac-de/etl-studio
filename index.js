@@ -289,8 +289,6 @@ ETL.render.componentEdit = function(componentID) {
             var data = ETL.util.deref(componentFormRaw);
             var html = "";
 
-            console.log(data);
-
             if (data.properties != undefined) {
 
                 for (var property of data.properties) {
