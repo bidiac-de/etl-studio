@@ -372,11 +372,79 @@ if (jobID != "0") {
     }
 
 
+    function importFromJson(data = {}) {
+        return new Promise(async function(resolve, reject) {
+            var components = data.components;
+            if (Array.isArray(components)) {
+                for (var component of components) {
+                    var compType = component["comp_type"];
+                    await addComponentToWhiteboard(compType, JSON.parse(JSON.stringify(component)));
+                }
 
-    function importFromJson(json = {}) {
+                for (var component of components) {
+                    console.log(component);
+
+                    var outputID = getComponentIdFromName(component.name);
+                    var compType = component["comp_type"];
+
+                    if (component.routes != undefined) {
+                        for (var outputName in component.routes) {
+                            var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compType+"/full");
+                            var outputNameDrawflow;
+                            if (compTypeDataFull != false) {
+                                if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["output_port_names"] != undefined) {
+                                    for (var i in compTypeDataFull["x-class"]["output_port_names"]) {
+                                        if (compTypeDataFull["x-class"]["output_port_names"][i] == outputName) {
+                                            outputNameDrawflow = "output_"+(parseInt(i)+1);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (outputNameDrawflow != undefined) {
+                                var connections = component.routes[outputName];
+                                for (var connection of connections) {
+                                    console.log(connection);
+
+                                    var inputID = getComponentIdFromName(connection.to);
+                                    var inputName = connection["in_port"];
+                                    var compTypeInput = editor.getNodeFromId(inputID).data["comp_type"];
+
+                                    var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compTypeInput+"/full");
+                                    var inputNameDrawflow;
+                                    if (compTypeDataFull != false) {
+                                        if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["input_port_names"] != undefined) {
+                                            for (var i in compTypeDataFull["x-class"]["input_port_names"]) {
+                                                if (compTypeDataFull["x-class"]["input_port_names"][i] == inputName) {
+                                                    inputNameDrawflow = "input_"+(parseInt(i)+1);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (inputNameDrawflow != undefined) {
+                                        console.log(outputID, outputNameDrawflow, inputID, inputNameDrawflow);
+                                        editor.addConnection(outputID, inputID, outputNameDrawflow, inputNameDrawflow);
+                                    }
+
+
+                                    
+                                }
+
+                            }
+                            
+                        }
+                    }
+
+                    
+                    // addConnection(id_output, id_input, output_class, input_class)
+                }
+            }
+        });
         
     }
-
 
 
     function exportToJson() {
@@ -450,15 +518,20 @@ if (jobID != "0") {
                                 // delete empty objects and arrays
                                 for (var key in component) {
                                     var value = component[key];
-                                    if (typeof value == "object") {
-                                        if (Object.keys(value) == 0) {
-                                            delete data["components"][i][key];
+                                    if (value != null) {
+                                        if (typeof value == "object") {
+                                            if (Object.keys(value) == 0) {
+                                                delete data["components"][i][key];
+                                            }
+                                        } else if (typeof value == "array") {
+                                            if (x.length == 0) {
+                                                delete data["components"][i][key];
+                                            }
                                         }
-                                    } else if (typeof value == "array") {
-                                        if (x.length == 0) {
-                                            delete data["components"][i][key];
-                                        }
+                                    } else {
+                                        //delete data["components"][i][key];
                                     }
+                                    
                                 }
 
                                 if (typeof component["routes"] == "object" && typeof component["out_port_schemas"] == "object") {
@@ -497,65 +570,106 @@ if (jobID != "0") {
     }
 
 
-    function addComponentToWhiteboard(compType) {
+    function addComponentToWhiteboard(compType, component = {}) {
 
-        ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
-            if (selectedComponentRaw !== false) {
+        return new Promise(function(resolve, reject) {
 
-                var selectedComponent = ETL.util.deref(selectedComponentRaw);
-                //console.log(selectedComponent);
+            ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
+                if (selectedComponentRaw !== false) {
 
-                var title = selectedComponent.title;
-                var icon = selectedComponent.icon || "fa-solid fa-question";
-                var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
-                var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+                    var selectedComponent = ETL.util.deref(selectedComponentRaw);
+                    //console.log(selectedComponent);
 
-                var x_coordinate = 150;
-                var y_coordinate = 300;
+                    var title = selectedComponent.title;
+                    var icon = selectedComponent.icon || "fa-solid fa-question";
+                    var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
+                    var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
 
-                var componentProperties = {
-                    "comp_type": compType
-                }
+                    var x_coordinate = 150;
+                    var y_coordinate = 300;
 
-                for (var property of selectedComponent.properties) {
-                    var propertyName = property.name;
-                    var propertyValue = undefined;
-                    var propertyDefault = property.schema.default;
-                    var propertyType = property.schema.type;
-
-                    if (propertyType == "string") {
-                        propertyValue = propertyDefault || "";
-                    } else if (propertyType == "object") {
-                        propertyValue = propertyDefault || {};
-                    } else if (propertyType == "integer") {
-                        propertyValue = propertyDefault || 0;
+                    if (typeof component.layout == "object") {
+                        if (component.layout["x_coordinate"] != undefined) {
+                            x_coordinate = component.layout["x_coordinate"];
+                        }
+                        if (component.layout["y_coordinate"] != undefined) {
+                            y_coordinate = component.layout["y_coordinate"];
+                        }
                     }
 
-                    if (propertyValue != undefined) {
-                        componentProperties[propertyName] = propertyValue;
+                    var componentProperties;
+
+                    if (Object.entries(component).length > 0) {
+
+                        componentProperties = component;
+                        delete componentProperties["layout"];
+                        delete componentProperties["metadata_"];
+                        delete componentProperties["routes"];
+                        delete componentProperties["in_port_schemas"];
+
                     } else {
-                        componentProperties[propertyName] = {};
+
+                        componentProperties = {
+                            "comp_type": compType
+                        }
+
+                        for (var property of selectedComponent.properties) {
+                            var propertyName = property.name;
+                            var propertyValue = undefined;
+                            var propertyDefault = property.schema.default;
+                            var propertyType = property.schema.type;
+
+                            if (propertyType == "string") {
+                                propertyValue = propertyDefault || "";
+                            } else if (propertyType == "object") {
+                                propertyValue = propertyDefault || {};
+                            } else if (propertyType == "integer") {
+                                propertyValue = propertyDefault || 0;
+                            }
+
+                            if (propertyValue != undefined) {
+                                componentProperties[propertyName] = propertyValue;
+                            } else {
+                                componentProperties[propertyName] = {};
+                            }
+                        }
+
+                        if (componentProperties["name"] == "") {
+                            componentProperties["name"] = selectedComponent["title"];
+                        }
+
+                        while (componentNameExists(componentProperties["name"])) {
+                            componentProperties["name"] += "_new";
+                        }
+
                     }
+
+                    var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+componentProperties["name"]+"</span>";
+
+                    var nodeID = editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
+
+                    $('#componentDialog').removeAttr('open');
+
+                    resolve(nodeID);
+                } else {
+                    resolve(false);
                 }
+            });
 
-                if (componentProperties["name"] == "") {
-                    componentProperties["name"] = selectedComponent["title"];
-                }
-
-                while (componentNameExists(componentProperties["name"])) {
-                    componentProperties["name"] += "_new";
-                }
-
-                var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+componentProperties["name"]+"</span>";
-
-                editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
-
-                $('#componentDialog').removeAttr('open');
-            }
         });
 
     }
 
+
+    function getComponentIdFromName(name) {
+        var data = editor.export().drawflow.Home.data;
+        for (var i in data) {
+            var component = data[i];
+            if (component.data.name == name) {
+                return i;
+            }
+        }
+    }
 
     function componentNameExists(name) {
         var data = editor.export().drawflow.Home.data;
@@ -624,6 +738,8 @@ if (jobID != "0") {
 
             $("#jobTitle").html(": "+jobName);
             $("#lastChanged").html(jobLastChanged);
+
+            importFromJson(data);
 
         } else {
             window.location.href="./";
