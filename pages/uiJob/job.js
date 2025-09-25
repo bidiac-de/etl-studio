@@ -99,6 +99,7 @@ if (jobID != "0") {
         exportToJson().then(function(json) {
             ETL.api.put(serverID, "/jobs/"+jobID, json, true).then(function(data) {
                 //console.log(data);
+                loadJob(false);
             });
         });
     });
@@ -211,23 +212,35 @@ if (jobID != "0") {
     });
 
     $("#contextMenuEditBtn").click(function() {
-        if (contextMenuSelectedComponent != undefined) {
-            $("#componentEditDialog").attr("open", "");
-            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
-
-            ETL.render.componentEdit(selectedComponentID).then(function(result) {
-                if (result !== false) {
-                    $("#componentEditDialogMain").html(result);
-                    $("#btnSaveComponent").attr("disabled", false);
-                } else {
-                    $("#componentEditDialogMain").html("No Server connection!");
-                    $("#btnSaveComponent").attr("disabled", true);
-                }
-            });
-        }
+        contextMenuEditBtn();
     });
 
-    $("#btnSaveComponent").click(function() {
+    function contextMenuEditBtn(hidden = false) {
+        return new Promise(function(resolve, reject) {
+            if (contextMenuSelectedComponent != undefined) {
+                if (!hidden) {
+                    $("#componentEditDialog").attr("open", "");
+                }
+                var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+
+                ETL.render.componentEdit(selectedComponentID).then(function(result) {
+                    if (result !== false) {
+                        $("#componentEditDialogMain").html(result);
+                        $("#btnSaveComponent").attr("disabled", false);
+                        resolve(true);
+                    } else {
+                        $("#componentEditDialogMain").html("No Server connection!");
+                        $("#btnSaveComponent").attr("disabled", true);
+                        resolve(false);
+                    }
+                });
+            }
+        });
+    }
+
+    $("#btnSaveComponent").click(btnSaveComponent);
+
+    function btnSaveComponent() {
         if (contextMenuSelectedComponent != undefined) {
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
             var newData = ETL.util.getFormData($("#componentEditDialogMain"));
@@ -241,7 +254,7 @@ if (jobID != "0") {
             $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
             $('#componentEditDialog').removeAttr('open');
         }
-    });
+    }
 
     $(document).on("dblclick", ".component", function(event) {
         //console.log(event);
@@ -249,7 +262,8 @@ if (jobID != "0") {
         //console.log(component);
         if (component.length == 1) {
             contextMenuSelectedComponent = $(component).attr("id");
-            $("#contextMenuEditBtn").click();
+            //$("#contextMenuEditBtn").click();
+            contextMenuEditBtn();
         }
     });
 
@@ -441,6 +455,16 @@ if (jobID != "0") {
                     
                     // addConnection(id_output, id_input, output_class, input_class)
                 }
+
+
+                for (var component of $(".component")) {
+                    contextMenuSelectedComponent = $(component).attr("id");
+                    var result = await contextMenuEditBtn(true);
+                    if (result == true) {
+                        btnSaveComponent();
+                    }
+                }
+
             }
         });
         
@@ -456,6 +480,7 @@ if (jobID != "0") {
                     var drawFlowComponents = drawFlowExport["drawflow"]["Home"]["data"];
 
                     data["components"] = [];
+                    delete data["metadata_"];
 
                     if (drawFlowComponents != undefined) {
 
@@ -731,20 +756,27 @@ if (jobID != "0") {
     });
 
 
-    ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
-        if (data !== false) {
-            var jobName = data["name"];
-            var jobLastChanged = ETL.util.formatDate(new Date(data["metadata_"]["timestamp"]));
+    function loadJob(importWhiteboard = true) {
+        ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+            if (data !== false) {
+                var jobName = data["name"];
+                var jobLastChanged = ETL.util.formatDate(new Date(data["metadata_"]["timestamp"]));
 
-            $("#jobTitle").html(": "+jobName);
-            $("#lastChanged").html(jobLastChanged);
+                $("#jobTitle").html(": "+jobName);
+                $("#lastChanged").html(jobLastChanged);
 
-            importFromJson(data);
+                if (importWhiteboard) {
+                    importFromJson(data);
+                }
 
-        } else {
-            window.location.href="./";
-        }
-    });
+            } else {
+                window.location.href="./";
+            }
+        });
+    }
+
+
+    loadJob();
 
 
 } else {
