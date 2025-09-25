@@ -47,6 +47,8 @@
                         include("./pages/uiServer/server.php");
                     } else if (isset($_GET["user"])) {
                         include("./pages/uiUserManagement/userManagement.php");
+                    } else if (isset($_GET["credentials"])) {
+                        include("./pages/uiCredentials/credentials.php");
                     } else {
                         include("./pages/uiDashboard/dashboard.php");
                     }

@@ -8,6 +8,9 @@
         </div>
         <div style="text-align: right;">
             <input type="search" name="search" placeholder="Search" id="jobSearch" aria-label="Search" style="width: 50%; margin-right: 10px;"/>
+            <button class="outline secondary" data-tooltip="Credentials" data-placement="bottom" onclick="window.location.href='?credentials';">
+                <i class="fa-solid fa-key"></i>
+            </button>
             <button class="outline secondary" data-tooltip="Server" data-placement="bottom" onclick="window.location.href='?server';">
                 <i class="fa-solid fa-server"></i>
             </button>
