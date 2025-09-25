@@ -194,7 +194,7 @@ ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
 ETL.render = ETL.render || {};
 
 ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
-    console.log(property);
+    //console.log(property);
     var propertyName = property["name"];
     var required = property["required"] ? "required" : "";
     var schema = property["schema"];
@@ -231,7 +231,7 @@ ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
 
         if (propertyName == "out_port_schemas") {
             var fieldItems = schema.additionalProperties.properties[0].schema.items.properties;
-            console.log(fieldItems);
+            //console.log(fieldItems);
 
             jobDetailsFieldsetHTML += "<label>"+title+"</label>";
             jobDetailsFieldsetHTML += "<table id='tableOutPortSchema'><tr>";
@@ -276,7 +276,7 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
     return new Promise(function(resolve, reject) {
         ETL.api.get(serverID, "/configs/job").then(function(rawJsonData) {
             var data = ETL.util.deref(rawJsonData);
-            console.log(data);
+            //console.log(data);
 
             var html = "";
 
@@ -285,11 +285,11 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
                 if (jobID != undefined) {
                     ETL.api.get(serverID, "/jobs/"+jobID).then(function(jobData) {
                         if (jobData !== false) {
-                            console.log(jobData);
+                            //console.log(jobData);
                             for (var property of data.properties) {
                                 var propertyName = property["name"];
-                                console.log(propertyName);
-                                console.log(jobData[propertyName]);
+                                //console.log(propertyName);
+                                //console.log(jobData[propertyName]);
                                 html += ETL.render.propertyToHTML(property, jobData[propertyName]);
                             }
                             resolve(html);
@@ -315,7 +315,7 @@ ETL.render.componentEdit = function(componentID) {
 
         var selectedEditComponent = editor.getNodeFromId(componentID);
         var compType = selectedEditComponent.data["comp_type"];
-        console.log(selectedEditComponent, compType);
+        //console.log(selectedEditComponent, compType);
 
         ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(componentFormRaw) {
             var data = ETL.util.deref(componentFormRaw);
