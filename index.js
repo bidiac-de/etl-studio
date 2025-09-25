@@ -410,3 +410,8 @@ ETL.util.getFormData = function(element) {
     });
     return postData;
 }
+
+// Export for Node.js/CommonJS
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ETL;
+}
