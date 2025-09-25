@@ -6,6 +6,8 @@ var components = {};
 var currentJobJson;
 var codemirror;
 
+var tmpFieldSettings = [];
+
 
 if (jobID != "0") {
 
@@ -95,11 +97,8 @@ if (jobID != "0") {
 
     $("#btnSave").click(function() {
         exportToJson().then(function(json) {
-            ETL.api.put(serverID, "/jobs/"+jobID, json).then(function(data) {
+            ETL.api.put(serverID, "/jobs/"+jobID, json, true).then(function(data) {
                 console.log(data);
-                if (data == false) {
-                    ETL.util.alert("Server Error", "Unexpected response from server");
-                }
             });
         });
     });
@@ -167,8 +166,6 @@ if (jobID != "0") {
                         ETL.util.alert("Server Error", "Unexpected response from server");
                     }
                 });
-            } else {
-                ETL.util.alert("Server Error", "Unexpected response from server");
             }
         });
     });
@@ -255,6 +252,125 @@ if (jobID != "0") {
             $("#contextMenuEditBtn").click();
         }
     });
+
+    $(document).on("click", ".btnAddOutPortSchema", function() {
+        if (contextMenuSelectedComponent != undefined) {
+            selectedOutPortName = $(this).parent().parent().children().first().html();
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            var selectedNode = editor.getNodeFromId(selectedComponentID);
+            var updateData = selectedNode.data;
+            tmpFieldSettings = [];
+            if (updateData["out_port_schemas"] != undefined && updateData["out_port_schemas"][selectedOutPortName] != undefined && updateData["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
+                tmpFieldSettings = updateData["out_port_schemas"][selectedOutPortName]["fields"];
+            }
+            console.log(tmpFieldSettings);
+            openFieldDialog(selectedComponentID, selectedOutPortName);
+        }
+    });
+
+    $(document).on("click", "#btnAddField", function() {
+        if (contextMenuSelectedComponent != undefined) {
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+
+            var newFieldName = $("#newFieldName").val();
+            var newFieldDataType = $("#newFieldDataType").val();
+            var newFieldNullable = $("#newFieldNullable").prop("checked");
+
+            if (newFieldName != "") {
+                tmpFieldSettings.push({
+                    "name": newFieldName,
+                    "data_type": newFieldDataType,
+                    "nullable": newFieldNullable
+                });
+
+                openFieldDialog(selectedComponentID, selectedOutPortName);
+            } else {
+                $("#newFieldName").attr("aria-invalid", "true");
+            }   
+
+        }
+    });
+
+    $(document).on("click", "#btnSaveFieldDef", function() {
+        if (contextMenuSelectedComponent != undefined) {
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            var selectedNode = editor.getNodeFromId(selectedComponentID);
+            var updateData = selectedNode.data;
+            if (typeof updateData["out_port_schemas"] == "object") {
+                if (typeof updateData["out_port_schemas"][selectedOutPortName] != "object") {
+                    updateData["out_port_schemas"][selectedOutPortName] = {
+                        fields: []
+                    }
+                }
+                updateData["out_port_schemas"][selectedOutPortName]["fields"] = tmpFieldSettings;
+            }
+            editor.updateNodeDataFromId(selectedComponentID, updateData);
+            $('#fieldDefDialog').removeAttr('open');
+
+
+        }
+    });
+
+
+    function openFieldDialog(selectedComponentID) {
+        
+        var selectedNode = editor.getNodeFromId(selectedComponentID);
+        var data = selectedNode.data;
+        var compType = data["comp_type"];
+
+        ETL.api.get(serverID, "/configs/"+compType+"/full").then(function(compTypeData) {
+            compTypeData = ETL.util.deref(compTypeData);
+            console.log(compTypeData);
+
+            var fieldDef = compTypeData["$defs"]["FieldDef"];
+            var fieldDefProperties = fieldDef.properties;
+            var nameDef = fieldDefProperties["name"];
+            var dataTypeDef = fieldDefProperties["data_type"];
+            var nullableDef = fieldDefProperties["nullable"];
+
+            var html = "";
+            html += "<table><thead><tr><th>"+nameDef.title+"</th><th>"+dataTypeDef.title+"</th><th>"+nullableDef.title+"</th><th></th></tr></thead><tbody id='tableBodyFields'>";
+
+            for (var field of tmpFieldSettings) {
+
+                var nullableValue = field["nullable"] == true ? "checked" : "";
+                
+                html += "<tr>";
+                html += "<td><input type='text' placeholder='"+nameDef.title+"' value='"+field["name"]+"' /></td>";
+                html += "<td><select aria-label='"+dataTypeDef.title+"' value='"+field["data_type"]+"' >";
+                for (var item of dataTypeDef.enum) {
+                    var dataTypeSelected = field["data_type"] == item ? "selected" : "";
+                    html += "<option value='"+item+"' "+dataTypeSelected+">"+item+"</option>";
+                }
+                html += "</select></td>";
+                html += "<td><input type='checkbox' "+nullableValue+" /></td>";
+                html += "<td><button class='secondary'><i class='fa-solid fa-gear'></i></button> <button class='pico-background-red-550'><i class='fa-solid fa-trash'></i></button></td>";
+                html += "</tr>";
+            }
+
+
+            html += "<tr>";
+            html += "<td><input type='text' placeholder='"+nameDef.title+"' id='newFieldName' /></td>";
+            html += "<td><select aria-label='"+dataTypeDef.title+"' id='newFieldDataType'>";
+            for (var item of dataTypeDef.enum) {
+                html += "<option value='"+item+"'>"+item+"</option>";
+            }
+            html += "</select></td>";
+            html += "<td><input type='checkbox' id='newFieldNullable' /></td>";
+            html += "<td><button id='btnAddField'><i class='fa-solid fa-plus'></i> Add</button></td>";
+            html += "</tr>";
+
+            html += "</tbody></table>";
+
+
+            $("#fieldDefDialogMain").html(html);
+            $("#fieldDefDialog").attr("open", "");
+
+        });
+
+        
+    }
+
 
 
 
@@ -429,6 +545,7 @@ if (jobID != "0") {
     var editor = new Drawflow(drawflow);
     var contextMenuSelectedConnection;
     var contextMenuSelectedComponent;
+    var selectedOutPortName;
 
     editor.editor_mode = "edit";
     editor.zoom_value = 0.01;
@@ -492,8 +609,6 @@ if (jobID != "0") {
             console.log(data);
             if (data !== false) {
                 window.location.href="./?serverID="+serverID+"&job="+data;
-            } else {
-                ETL.util.alert("Server Error", "Unexpected response from server");
             }
         });
     });

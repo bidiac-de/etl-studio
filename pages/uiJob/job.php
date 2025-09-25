@@ -160,6 +160,29 @@
             </article>
         </dialog>
 
+        <dialog id="fieldDefDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Fields</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#fieldDefDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
+                
+                <div id="fieldDefDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveFieldDef"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
+            </article>
+        </dialog>
+
 
         <dialog id="deleteDialog">
             <article>

@@ -110,3 +110,15 @@ header .grid input, header .grid h2 {
     height: 32px;
     margin-right: 20px;
 }
+
+#tableOutPortSchema td {
+    border-radius: 5px;
+}
+
+#tableOutPortSchema td:last-child {
+    text-align: right;
+}
+
+.pico-background-red-550 {
+    border-color: transparent;
+}

@@ -62,7 +62,31 @@ ETL.console.onChangeHandler = function(log) {}
 
 ETL.api = ETL.api || {};
 
-ETL.api.get = function(serverID = 0, endpoint = "", data = {}) {
+ETL.api.onError = function(data) {
+    console.log(data);
+
+    var title = "Server Error";
+    var htmlErrorMsg = "Unexpected response from server";
+
+    if (data.responseJSON != undefined && data.responseJSON.detail != undefined && data.responseJSON.detail.length > 0) {
+        var errorDetail = data.responseJSON.detail[0];
+        var msg = errorDetail.msg || "Unexpected response from server";
+        var loc = errorDetail.loc || [];
+        title = data.statusText || "Server Error";
+
+        /*var htmlErrorMsg = "<nav aria-label='breadcrumb'><ul>";
+        for (var item of loc) {
+            htmlErrorMsg += "<li>"+item+"</li>";
+        }
+        htmlErrorMsg += "</ul></nav><br>";*/
+        htmlErrorMsg = "<kbd>"+msg+"</kbd>";
+    }
+
+    ETL.util.alert(title, htmlErrorMsg);
+    
+}
+
+ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
             var url = server[serverID].host+endpoint;
@@ -74,7 +98,10 @@ ETL.api.get = function(serverID = 0, endpoint = "", data = {}) {
                 success: function(data) {
                     resolve(data);
                 },
-                error: function() {
+                error: function(data) {
+                    if (showError) {
+                        ETL.api.onError(data);
+                    }
                     resolve(false);
                 }
             });
@@ -84,7 +111,7 @@ ETL.api.get = function(serverID = 0, endpoint = "", data = {}) {
     });
 }
 
-ETL.api.post = function(serverID = 0, endpoint = "", data = {}) {
+ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
             var url = server[serverID].host+endpoint;
@@ -97,7 +124,10 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}) {
                 success: function(data) {
                     resolve(data);
                 },
-                error: function() {
+                error: function(data) {
+                    if (showError) {
+                        ETL.api.onError(data);
+                    }
                     resolve(false);
                 }
             });
@@ -107,7 +137,7 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}) {
     });
 }
 
-ETL.api.put = function(serverID = 0, endpoint = "", data = {}) {
+ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
             var url = server[serverID].host+endpoint;
@@ -120,7 +150,10 @@ ETL.api.put = function(serverID = 0, endpoint = "", data = {}) {
                 success: function(data) {
                     resolve(data);
                 },
-                error: function() {
+                error: function(data) {
+                    if (showError) {
+                        ETL.api.onError(data);
+                    }
                     resolve(false);
                 }
             });
@@ -130,7 +163,7 @@ ETL.api.put = function(serverID = 0, endpoint = "", data = {}) {
     });
 }
 
-ETL.api.delete = function(serverID = 0, endpoint = "") {
+ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
             var url = server[serverID].host+endpoint;
@@ -141,7 +174,10 @@ ETL.api.delete = function(serverID = 0, endpoint = "") {
                 success: function(data) {
                     resolve(true);
                 },
-                error: function() {
+                error: function(data) {
+                    if (showError) {
+                        ETL.api.onError(data);
+                    }
                     resolve(false);
                 }
             });
@@ -191,6 +227,46 @@ ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
             jobDetailsFieldsetHTML += "<option "+selected+" value='"+option+"'>"+option+"</option>";
         }
         jobDetailsFieldsetHTML += "</select></label>";
+    } else if (schema.type == "object") {
+
+        if (propertyName == "out_port_schemas") {
+            var fieldItems = schema.additionalProperties.properties[0].schema.items.properties;
+            console.log(fieldItems);
+
+            jobDetailsFieldsetHTML += "<label>"+title+"</label>";
+            jobDetailsFieldsetHTML += "<table id='tableOutPortSchema'><tr>";
+            jobDetailsFieldsetHTML += "<td>out</td>";
+            jobDetailsFieldsetHTML += "<td><button class='btnAddOutPortSchema secondary'><i class='fa-solid fa-pencil'></i> Edit schema</button></td>";
+            jobDetailsFieldsetHTML += "<tr></table>";
+
+            /*jobDetailsFieldsetHTML += "<label>"+title+"<fieldset role='group'>";
+
+
+            for (var fieldItem of fieldItems) {
+                var fieldItemTitle = fieldItem.schema.title;
+                var fieldItemRequired = fieldItem.required;
+                var fieldItemType = fieldItem.schema.type;
+
+                if (fieldItemType == "string") {
+                    jobDetailsFieldsetHTML += "<input type='text' placeholder='"+fieldItemTitle+"' autocomplete='off' />";
+                } else if (fieldItemType == "select") {
+                    jobDetailsFieldsetHTML += "<select aria-label='"+fieldItemTitle+"'>";
+                    for (var option of fieldItem.schema.enum) {
+                        jobDetailsFieldsetHTML += "<option value='"+option+"'>"+option+"</option>";
+                    }
+                    jobDetailsFieldsetHTML += "</select>";
+                } else if (fieldItemType == "boolean") {
+                    jobDetailsFieldsetHTML += "<label class='checkBoxLabel'>"+fieldItemTitle+"<input type='checkbox' /></label>";
+                }
+            }
+
+            jobDetailsFieldsetHTML += "<input type='submit' value='Add' />";
+            jobDetailsFieldsetHTML += "</fieldset></label>";*/
+
+
+        }
+
+        
     }
 
     return jobDetailsFieldsetHTML;

@@ -242,3 +242,16 @@ body {
 #contextMenu div:hover {
     color: var(--pico-color-slate-400);
 }
+
+a {
+    cursor: pointer;
+}
+
+#fieldDefDialog td {
+    vertical-align: middle;
+}
+
+#fieldDefDialog td input, #fieldDefDialog td select {
+    margin-top: 7px !important;
+    margin-bottom: 7px !important;
+}
