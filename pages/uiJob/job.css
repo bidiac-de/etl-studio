@@ -22,6 +22,26 @@ body {
     text-align: right;
 }
 
+#componentsTable td:first-child {
+    font-size: x-large;
+}
+
+#componentsTable td:first-child div {
+    background: var(--pico-color-slate-650);
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 40px;
+}
+
+#componentsTable td:first-child div i {
+    line-height: 40px;
+    text-align: center;
+}
+
 #componentsTableDiv {
     height: 50vh;
     max-height: 50vh;

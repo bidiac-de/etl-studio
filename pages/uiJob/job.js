@@ -70,11 +70,11 @@ if (jobID != "0") {
                         var icon = component["icon"];
 
                         if (typeof icon != "string") {
-                            icon = "fa-solid fa-box";
+                            icon = "fa-solid fa-question";
                         }
 
                         componentsTemplate[compType] = component;
-                        componentTable += "<tr><td><i class=\""+icon+"\"></i></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
+                        componentTable += "<tr><td><div><i class=\""+icon+"\"></i></div></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
 
                         
                     }
