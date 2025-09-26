@@ -1,29 +1,7 @@
 <?php
 
-    $jobName = "";
-
-    if ($jobID > 0) {
-
-        $jobID = intval($jobID);
-
-        if (isset($_GET["delete"])) {
-
-            $result = $db->query("DELETE FROM jobs WHERE jobID='$jobID'");
-            header("refresh:0; url=?job=$jobID");
-
-        } else {
-            $result = $db->query("SELECT * FROM jobs WHERE jobID='$jobID'");
-
-            $resultArray = $result->fetchArray();
-            if ($resultArray) {
-                $jobName = $resultArray["jobName"];
-                $dt = new DateTime($resultArray['jobCreated'], new DateTimeZone("UTC"));
-                $dt->setTimezone(new DateTimeZone($timeZone));
-                $jobCreated = $dt->format("d.m.Y H:i:s");
-            } else {
-                header("refresh:0; url=./");
-            }
-        }
+    if (isset($_GET["serverID"])) {
+        $serverID = $_GET["serverID"];
     }
 
 ?>
@@ -38,13 +16,7 @@
                 <i class="fa-solid fa-arrow-left-long"></i>
             </button>
             <h2 style="float: left;">Job</h2>
-            <?php
-                if ($jobName != "") {
-                    ?>
-                    <h2>: <?=$jobName?></h2>
-                    <?php
-                }
-            ?>
+            <h2 id="jobTitle"></h2>
         </div>
         <div style="direction: rtl;">
             <?php
@@ -53,7 +25,7 @@
             <button class="outline secondary" data-tooltip="Delete" data-placement="bottom" id="btnDelete" onclick="$('#deleteDialog').attr('open', '');">
                 <i class="fa-solid fa-trash"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Settings" data-placement="bottom">
+            <button class="outline secondary" data-tooltip="Settings" data-placement="bottom" id="btnSettings">
                 <i class="fa-solid fa-gear"></i>
             </button>
             <!--<button class="outline secondary" data-tooltip="Version" data-placement="bottom">
@@ -65,13 +37,13 @@
             <button class="outline secondary" data-tooltip="Console" data-placement="bottom" id="btnOpenConsole">
                 <i class="fa-solid fa-terminal"></i>
             </button>
-            <button class="outline secondary" data-tooltip="JSON" data-placement="bottom">
+            <button class="outline secondary" data-tooltip="JSON" data-placement="bottom" id="btnJSON">
                 <i class="fa-solid fa-code"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" disabled>
+            <button class="outline secondary" data-tooltip="Save" data-placement="bottom" id="btnSave">
                 <i class="fa-solid fa-floppy-disk"></i>
             </button>
-            <button onclick="$('#componentDialog').attr('open', '');">
+            <button id="openComponentsDialog">
                 Add component <i class="fa-solid fa-plus"></i>
             </button>
 
@@ -84,12 +56,15 @@
 </header>
 
 <input type="hidden" value="<?=$jobID?>" id="jobID">
+<input type="hidden" value="<?=$serverID?>" id="serverID">
 
 <?php
     if ($jobID > 0) {
         ?>
         <div id="whiteboard-container">
-            <div id="whiteboard"></div>
+            <!--<div id="whiteboard"></div>-->
+            <div id="drawflow"></div>
+            <textarea id="codemirror"></textarea>
         </div>
         <div id="console">
             <div class="title">
@@ -102,20 +77,14 @@
         <div id="footer">
             <div class="grid">
                 <div class="leftFooter">
-                    <!--<div class="connectionLamp"></div>
-                    <span>Execution server online</span>-->
                     <span class="btn" id="btnOpenTerminalFooter"><i class="fa-solid fa-terminal"></i></span>
                     <span class="btn">
                         <i class="fa-solid fa-clock-rotate-left" style="margin-right: 5px;"></i>
-                        <?=$jobCreated?>
+                        <span id="lastChanged"></span>
                     </span>
                 </div>
-                <div>
-                    
-                </div>
+                <div></div>
                 <div style="text-align: right; margin-right: 10px; user-select: none;">
-                    <!--<span>current version: <?=$jobCreated?></span>-->
-
                     <span id="zoomNeutral" style="margin-right: 5px;"><i class="fa-solid fa-expand"></i></span>
                     <span id="zoomDecrement"><i class="fa-solid fa-minus"></i></span>
                     <span id="zoomText">100%</span>
@@ -138,55 +107,79 @@
                             <button class="secondary" onclick="$('#componentDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
-                </header>    
+                </header>
+                <div id="componentsTableDiv">
+                    <table id="componentsTable"></table>
+                </div>
+            </article>
+        </dialog>
 
-                <br>
-                <h3>Default components</h3>
-                <hr>
-
-                <table id="componentsTable">
-                    <?php
-
-                    function printComponentListElement($name, $level = 0) {
-                        $style = $level == 0 ? "" : "style='padding-left: ".($level*32)."px'";
-                        $extra = $level == 0 ? "" : "&#8627;&nbsp;&nbsp;&nbsp;";
-                        ?>
-                        <tr>
-                            <td <?=$style?>><?=$extra.$name?></td>
-                            <td>
-                                <button class="secondary"><i class="fa-solid fa-sliders"></i> Custom</button>
-                                <button><i class="fa-solid fa-plus"></i> Add</button>
-                            </td>
-                        </tr>
-                        <?php
-                    }
-
-                    function printComponentListElementHeader($name, $level = 0) {
-                        ?>
-                        <tr>
-                            <td><b><?=$name?></b></td>
-                            <td></td>
-                        </tr>
-                        <?php
-                    }
-
-                    foreach ($availableComponents as $key => $value) {
-                        if (is_array($value)) {
-                            printComponentListElementHeader($key);
-                            foreach ($value as $key2 => $value2) {
-                                printComponentListElement($value2, 1);
-                            }
-                        } else {
-                            printComponentListElement($value);
-                        }
-                    }
-                    ?>
-                </table>
-
-                <h3>Custom components</h3>
-                <hr>
+        <dialog id="settingsDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Job Settings</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#settingsDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
                 
+                <div id="settingsDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveJobSettings"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
+            </article>
+        </dialog>
+
+        <dialog id="componentEditDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Component</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#componentEditDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
                 
+                <div id="componentEditDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveComponent"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
+            </article>
+        </dialog>
+
+        <dialog id="fieldDefDialog">
+            <article>
+                <header>
+                    <div class="grid">
+                        <div>
+                            <h2>Fields</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <input type="search" name="search" placeholder="Search" aria-label="Search" style="width: 75%; margin-right: 10px;"/>
+                            <button class="secondary" onclick="$('#fieldDefDialog').removeAttr('open');"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </header>
+                
+                <div id="fieldDefDialogMain"></div>
+
+                <footer>
+                    <button id="btnSaveFieldDef"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                </footer>
+
             </article>
         </dialog>
 
@@ -194,59 +187,58 @@
         <dialog id="deleteDialog">
             <article>
                 <h2>Confirm</h2>
-                <p>
-                    Are you sure to delete the job? It can't be undone.
-                </p>
+                <p>Are you sure to delete the job? It can't be undone.</p>
                 <footer>
                     <button class="secondary" onclick="$('#deleteDialog').removeAttr('open');">Cancel</button>
-                    <button id="btnConfirmDelete" onclick="window.location.href+='&delete'"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <button id="btnConfirmDelete"><i class="fa-solid fa-trash"></i> Delete</button>
                 </footer>
             </article>
         </dialog>
 
 
 
-        <script src="pages/uiJob/whiteboard.js"></script>
+        <div id="contextMenu">
+            <div id="contextMenuEditBtn"><i class="fa-solid fa-pen"></i> Edit</div>
+            <div id="contextMenuDeleteBtn"><i class="fa-solid fa-trash"></i> Delete</div>
+        </div>
+
+
+        <div id="executionMenu">
+            <div class="btnExecutionMenu" environment="DEV"><i class="fa-solid fa-bug"></i> Development</div>
+            <div class="btnExecutionMenu" environment="TEST"><i class="fa-solid fa-flask-vial"></i> Test</div>
+            <div class="btnExecutionMenu" environment="PROD"><i class="fa-solid fa-shield"></i> Production</div>
+        </div>
+
 
         <?php
     } else {
 
-        if (isset($_POST["jobname"])) {
-            $jobName = $db->escapeString($_POST["jobname"]);
-            $jonCreatedBy = $db->escapeString($_POST["jobcreatedby"]);
 
-            $result = $db->query("INSERT INTO jobs (jobName) VALUES ('$jobName')");
-            $jobID = $db->lastInsertRowID();
-
-            if ($jobID > 0) {
-                header("refresh:0; url=?job=$jobID");
-            } else {
-
-            }
-            /*print_r($result);
-            print_r($result->fetchArray());*/
-
-        }
 
         ?>
         <br><br>
         <main class="container">
-            <h3>Create new job</h3>
+            <h3><i class="fa-solid fa-diagram-project"></i> Create new job</h3>
             <hr>
-            <form method="POST" action="?job=0" onsubmit="$(this).find('input').prop('disabled', false)">
-                <fieldset>
-                    <label>
-                        Job name
-                        <input name="jobname"/>
-                    </label>
-                    <label>
-                        Created by
-                        <input name="jobcreatedby" value="<?=$_SESSION["fullname"]?>" disabled />
-                    </label>
-                </fieldset>
-                <button><i class="fa-solid fa-floppy-disk"></i> Save</button>
-            </form>
-            
+            <fieldset>
+                <label>
+                    Server
+                    <select id="newJobServerSelection" name="select" aria-label="Server selection" required>
+                        <option selected disabled value="">Select</option>
+                        <?php
+                            if (isset($_SESSION["server"])) {
+                                $server = $_SESSION["server"];
+                                foreach ($server as $key => $value) {
+                                    ?><option value="<?=$key?>"><?=$value["description"]." (".$value["host"].")"?></option><?php
+                                }
+                            }
+                        ?>
+                    </select>
+                </label>
+                <div id="jobDetailsFieldset"></div>
+
+            </fieldset>
+            <button id="newJobSaveButton" disabled><i class="fa-solid fa-floppy-disk"></i> Save</button>
         </main>
         <?php
     }

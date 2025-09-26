@@ -13,7 +13,8 @@
 <link rel="stylesheet" href="pages/uiLogin/login.css">
 <main class="container-fluid" id="loginContainerParent">
     <main class="container" id="loginContainerChild">
-        <h1>Login</h1>
+        <img src="./img/icon.png" class="logo" alt="">
+        <h1>ETL - Login</h1>
         <hr><br>
         <form method="POST">
             <input name="username" placeholder="Username" autocomplete="username" value="<?=$username?>" />
@@ -24,7 +25,7 @@
                 Remember me
             </label>
             <br>
-            <button id="btnLogin">Log in</button>
+            <button id="btnLogin">Log in <i class="fa-solid fa-right-to-bracket"></i></button>
         </form>
         <hr>
     </main>

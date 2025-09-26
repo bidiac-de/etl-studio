@@ -7,6 +7,10 @@ body {
     border-color: var(--pico-color-red-400);
 }
 
+#btnExecuteScriptSummary {
+    width: 46.5px;
+}
+
 .connectionLamp {
     margin-left: 20px;
     margin-right: 10px;
@@ -20,6 +24,60 @@ body {
 
 #componentsTable td:last-child {
     text-align: right;
+}
+
+#componentsTable td:first-child {
+    font-size: x-large;
+}
+
+#componentsTable td:first-child div {
+    background: var(--pico-color-slate-150);
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 40px;
+}
+
+[data-theme='dark'] #componentsTable td:first-child div {
+    background: var(--pico-color-slate-650);
+}
+
+#componentsTable td:first-child div i {
+    line-height: 40px;
+    text-align: center;
+}
+
+#componentsTableDiv {
+    height: 50vh;
+    max-height: 50vh;
+    overflow: scroll;
+}
+
+#settingsDialogMain, #componentEditDialogMain {
+    height: 40vh;
+    max-height: 40vh;
+    overflow: scroll;
+    min-width: 100%;
+    width: 100%;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: 10px;
+}
+
+#codemirror {
+    display: none;
+    width: 100%;
+    height: calc(100% - 24px);
+    outline: none !important;
+    user-select: none !important;
+}
+
+#drawflow {
+    width: 100%;
+    height: 100%;
 }
 
 
@@ -45,7 +103,7 @@ body {
 
 #whiteboard-container{
     width: 100vw;
-    height: 100vh;
+    height: calc(100% - 15px);
     z-index: 1;
     overflow: hidden;
 }
@@ -110,7 +168,7 @@ body {
 
 #consoleText {
     font-family: monospace;
-    font-size: small;
+    font-size: medium;
     position: absolute;
     left: 0;
     top: 26px;
@@ -145,4 +203,83 @@ body {
     top: 0;
     z-index: 99;
     display: none;
+}
+
+
+
+
+.component {
+    text-align: center;
+}
+
+.componentIcon {
+    font-size: xx-large;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.componentName {
+    margin-top: auto;
+    font-weight: bold;
+    text-align: center;
+}
+
+.drawflow-delete {
+    display: none;
+}
+
+#contextMenu, #executionMenu {
+    position: absolute;
+    display: none;
+    margin: 0;
+    background: var(--pico-color-slate-50);
+    border: 2px solid var(--pico-color-azure-500);
+    color: var(--pico-color-slate-850);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+[data-theme='dark'] #contextMenu, [data-theme='dark'] #executionMenu {
+    background: var(--pico-color-slate-950);
+    border: 2px solid var(--pico-color-azure-750);
+    color: var(--pico-color-slate-150);
+}
+
+#contextMenu div, #executionMenu div {
+    cursor: pointer;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 15px;
+    padding-right: 25px;
+}
+
+#contextMenu div:not(:last-child), #executionMenu div:not(:last-child) {
+    border-bottom: 1px solid var(--pico-color-slate-150);
+}
+
+[data-theme='dark'] #contextMenu div:not(:last-child), [data-theme='dark'] #executionMenu div:not(:last-child) {
+    border-bottom: 1px solid var(--pico-color-slate-900);
+}
+
+#contextMenu i, #executionMenu i {
+    margin-right: 5px;
+}
+
+#contextMenu div:hover, #executionMenu div:hover  {
+    color: var(--pico-color-slate-400);
+}
+
+a {
+    cursor: pointer;
+}
+
+#fieldDefDialog td {
+    vertical-align: middle;
+}
+
+#fieldDefDialog td input, #fieldDefDialog td select {
+    margin-top: 7px !important;
+    margin-bottom: 7px !important;
 }
