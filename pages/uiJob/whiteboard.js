@@ -31,6 +31,10 @@ $("#whiteboard").on("mousemove", function(element) {
 });
 
 
+/**
+ * Sets the whiteboard margin and adjusts size to prevent container overflow
+ * Ensures whiteboard stays within container bounds and maintains proper positioning
+ */
 function setWhiteboardMarginAndSize() {
     if (whiteboardMarginLeft > -20) whiteboardMarginLeft = whiteboardMarginLeft % 20 - 20;
     if (whiteboardMarginTop > -20) whiteboardMarginTop = whiteboardMarginTop % 20 - 20;
@@ -52,6 +56,10 @@ function setWhiteboardMarginAndSize() {
     });
 }
 
+/**
+ * Sets the whiteboard zoom level with constraints and updates display
+ * @param {number} [zoom=1] - Zoom level (constrained between 0.5 and 2)
+ */
 function setWhiteboardZoom(zoom = 1) {
     if (zoom < 0.5) zoom = 0.5;
     if (zoom > 2) zoom = 2;

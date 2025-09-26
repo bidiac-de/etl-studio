@@ -1,14 +1,27 @@
+/**
+ * Displays validation error message for a form field
+ * @param {string} [id=""] - The ID of the form field
+ * @param {string} [msg=""] - The error message to display
+ */
 function validationErrorText(id="", msg="") {
     $("#"+id).attr("aria-invalid", "true");
     $("#"+id+"-validationtext").html(msg);
 }
 
+/**
+ * Clears validation error for a form field
+ * @param {string} [id=""] - The ID of the form field
+ */
 function validationOk(id="") {
     $("#"+id).attr("aria-invalid", "false");
     $("#"+id+"-validationtext").html("");
 }
 
 
+/**
+ * Validates SQLite file path by checking if it's not empty and making server request
+ * @returns {Promise<boolean>} Promise that resolves to true if valid, false otherwise
+ */
 function validateSqlitefilepath() {
     return new Promise(function(resolve, reject) {
         if ($("#sqlitefilepath").val() == "") {
@@ -30,6 +43,10 @@ function validateSqlitefilepath() {
     });
 }
 
+/**
+ * Validates username field by checking if it's not empty
+ * @returns {Promise<boolean>} Promise that resolves to true if valid, false otherwise
+ */
 function validateUsername() {
     return new Promise(function(resolve, reject) {
         if ($("#username").val() == "") {
@@ -42,6 +59,10 @@ function validateUsername() {
     });
 }
 
+/**
+ * Validates password fields by checking if password is not empty and passwords match
+ * @returns {Promise<boolean>} Promise that resolves to true if valid, false otherwise
+ */
 function validatePassword() {
     return new Promise(function(resolve, reject) {
         var password = $("#password").val();

@@ -1,3 +1,7 @@
+/**
+ * Handles description field input events
+ * Enables/disables server add button based on field content
+ */
 $("#description").on("keyup change", function() {
     if ($("#description").val() != "") {
         $("#btnServerAdd").removeAttr("disabled");
@@ -6,6 +10,10 @@ $("#description").on("keyup change", function() {
     }
 });
 
+/**
+ * Handles server add button click event
+ * Validates server connection and submits form if successful
+ */
 $("#btnServerAdd").click(function() {
     var prevBtnText = $("#btnServerAdd").html();
     $("#btnServerAdd").html("Checking").prop("disabled", true).attr("aria-busy", "true");
@@ -31,12 +39,20 @@ $("#btnServerAdd").click(function() {
     
 });
 
+/**
+ * Handles server form reset button click event
+ * Resets the server dialog form
+ */
 $("#btnServerFormReset").click(function() {
     $("#serverDialog form").trigger("reset");
 });
 
 $("#description").trigger("change");
 
+/**
+ * Initializes server status checking after page load
+ * Checks connection status for all servers in the table
+ */
 setTimeout(function() {
     var serverTableBody = $("#serverTableBody tr");
     for (var serverTr of serverTableBody) {

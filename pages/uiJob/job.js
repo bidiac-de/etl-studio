@@ -2,6 +2,10 @@ var jobID = $("#jobID").val();
 
 if (jobID > 0) {
 
+    /**
+     * Handles console log changes by updating the console text area and scrolling to bottom
+     * @param {string} log - The console log content to display
+     */
     ETL.console.onChangeHandler = function(log) {
         $("#consoleText").val(log);
         $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
