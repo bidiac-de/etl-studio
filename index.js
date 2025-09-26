@@ -285,7 +285,7 @@ ETL.render.componentEdit = function(componentID) {
         var compType = selectedEditComponent.data["comp_type"];
         //console.log(selectedEditComponent, compType);
 
-        ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(componentFormRaw) {
+        ETL.api.get(serverID, "/configs/"+compType+"/form").then(async function(componentFormRaw) {
             var data = ETL.util.deref(componentFormRaw);
             var html = "";
 
@@ -308,6 +308,33 @@ ETL.render.componentEdit = function(componentID) {
                             }
                             html += "</table>";
                         }
+                    }
+
+                    if (propertyName == "context_id") {
+                        var title = schema["title"] || "";
+                        html += "<label>"+title+"<br><select class='formInput' name='"+propertyName+"' aria-label='"+title+"'><option value=''></option>";
+
+                        var contextList = await ETL.api.get(serverID, "/contexts/");
+                        if (contextList !== false) {
+                            for (var context of contextList) {
+
+                                var contextID = context.id;
+                                var contextName = context.name;
+
+                                if (context.kind == "context") {
+                                    var selected = selectedEditComponent.data[propertyName] == contextID ? "selected" : "";
+
+                                    html += "<option value='"+contextID+"' "+selected+">"+contextID + " - " + contextName+"</option>";
+
+
+                                }
+                            }
+                        }
+
+                        
+                        html += "</select></label>";
+
+
                     }
 
                     html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);

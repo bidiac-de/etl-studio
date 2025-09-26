@@ -1,20 +1,11 @@
 <?php
-    $userID = intval(isset($_GET["userID"]) ? $_GET["userID"] : 0);
-
-    $username = "";
-    $fullname = "";
-
-    if ($userID > 0) {
-        $result = $db->query("SELECT * FROM users WHERE userID='$userID'");
-        while($row = $result->fetchArray()) {
-            $username = $row["username"];
-            $fullname = $row["fullname"];
-        }
-    }
-
+    $credentialID = intval(isset($_GET["credentialID"]) ? $_GET["credentialID"] : 0);
+    $contextType = isset($_GET["contextType"]) ? $_GET["contextType"] : "";
 ?>
 
-<link rel="stylesheet" href="pages/uiUserManagement/userManagement.css">
+<link rel="stylesheet" href="pages/uiCredentials/credentials.css">
+
+<input type="hidden" value="<?=$contextType?>" id="contextType">
 
 <header class="container-fluid">
     <div class="grid">
@@ -34,77 +25,229 @@
 <main class="container">
     
     <h3 style="margin-right: 25px; float: left;"><i class="fa-solid fa-key"></i> Credentials</h3>
-    <button style="cursor: pointer;" onclick="window.location.href='?user&userID=0'">
+    <button style="cursor: pointer;" onclick="window.location.href='?credentials&credentialID=0&contextType=credential'">
         <i class="fa-solid fa-plus"></i> Add new credential
     </button>
     <hr>
-    <table class="striped" id="userTable">
+    <table class="striped" id="credentialTable">
         <thead>
             <tr>
                 <th class="tableFit"><i class="fa-solid fa-fingerprint"></i> ID</th>
-                <th style="width: 30%;"><i class="fa-solid fa-signature"></i> Username</th>
-                <th style="width: 30%;">Fullname</th>
-                <th id="thLastChange"><i class="fa-solid fa-clock-rotate-left"></i> Last login</th>
+                <th><i class="fa-solid fa-key"></i> Name</th>
+                <th>Host</th>
+                <th>Port</th>
+                <th><i class="fa-solid fa-database"></i> Database</th>
                 <th class="tableFit"></th>
             </tr>
         </thead>
-        <tbody id="userTableBody">
-            <?php
-                $result = $db->query("SELECT * FROM users ORDER BY userID DESC");
-                while($row = $result->fetchArray()) {
-                    /*$dt = new DateTime($row['jobCreated'], new DateTimeZone("UTC"));
-                    $dt->setTimezone(new DateTimeZone($timeZone));
-                    $createdDate = $dt->format("d.m.Y H:i");*/
-                    $lastLogin = "01.01.1970 01:00 Uhr";
-                    ?>
-                    <tr onclick="window.location.href='?user&userID=<?=$row['userID']?>'">
-                        <td><?=$row['userID']?></td>
-                        <td><?=$row['username']?></td>
-                        <td><?=$row["fullname"]?></td>
-                        <td><?=$lastLogin?></td>
-                        <td><i class="fa-solid fa-chevron-right"></i></td>
-                    </tr>
-                    <?php
-                }
-            ?>
-        </tbody>
+        <tbody id="credentialTableBody"></tbody>
     </table>
     <br><hr>
+    <br><br><br>
 
-    <!--<h3 style="margin-right: 25px;"><i class="fa-solid fa-user-group"></i> Groups</h3>
-    <hr>
-    <br><br><br><br><br>
-
-    <h3 style="margin-right: 25px;"><i class="fa-solid fa-shield"></i> Roles</h3>
-    <hr>
-    <br><br><br>-->
+    <div>
+        <h3 style="margin-right: 25px; float: left;"><i class="fa-solid fa-code-merge"></i> Credentials Mapping</h3>
+        <button style="cursor: pointer;" onclick="window.location.href='?credentials&credentialID=0&contextType=mapping'">
+            <i class="fa-solid fa-plus"></i> Add new mapping
+        </button>
+        <hr>
+        <table class="striped" id="credentialMappingTable">
+            <thead>
+                <tr>
+                    <th class="tableFit"><i class="fa-solid fa-fingerprint"></i> ID</th>
+                    <th><i class="fa-solid fa-signature"></i> Name</th>
+                    <th><i class="fa-solid fa-key"></i> DEV</th>
+                    <th><i class="fa-solid fa-key"></i> TEST</th>
+                    <th><i class="fa-solid fa-key"></i> PROD</th>
+                    <th class="tableFit"></th>
+                </tr>
+            </thead>
+            <tbody id="credentialMappingTableBody"></tbody>
+        </table>
+    </div>
+    <br><hr>
 
 </main>
 
-<dialog id="userDialog" <?=isset($_GET["userID"])?"open":""?>>
+<dialog id="credentialDialog" <?=isset($_GET["credentialID"])?"open":""?>>
     <article>
         <header>
             <div style="float: left;">
-                <h2><i class="fa-solid fa-server"></i> <?=$userID>0?"Edit":"Add new"?> user</h2>
+                <h2><i class="fa-solid fa-key"></i> <?=$credentialID>0?"Show":"Add new"?> credential <?=$contextType == "mapping"? "mapping": ""?></h2>
             </div>
             <div style="text-align: right;">
-                <button class="secondary" onclick="window.location.href='?user'"><i class="fa-solid fa-xmark"></i></button>
+                <button class="secondary" onclick="window.location.href='?credentials'"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </header>
 
         <br>
 
-        <div style="padding-left: 24px; padding-right: 24px;">
-            <form method="POST">
+        
 
-                
+        <?php
+        if ($contextType == "mapping") {
+        ?>
+
+        <div style="padding-left: 24px; padding-right: 24px;" id="formCredentialMapping">
+            <form method="POST">
 
                 <div class="row">
                     <div class="col-sm-4 col-xs-12 labelColumn">
-                        User ID
+                        Server
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input type="text" name="userID" id="userID" value="<?=$userID?>" readonly="readonly" disabled>
+                        <select id="newCredentialMappingServerSelection" aria-label="Server selection" required>
+                            <?php
+                                if (isset($_SESSION["server"])) {
+                                    $server = $_SESSION["server"];
+                                    foreach ($server as $key => $value) {
+                                        ?><option value="<?=$key?>"><?=$value["description"]." (".$value["host"].")"?></option><?php
+                                    }
+                                }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Credential Mapping ID
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input type="text" name="credentialID" id="credentialID" value="<?=$credentialID?>" readonly="readonly" disabled>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Name
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="name" type="text" id="name" placeholder="Name" value=""/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Credential ID Development
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <select id="credentialDev" name="credentialDev" aria-label="Environment" required></select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Credential ID Test
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <select id="credentialTest" name="credentialTest" aria-label="Environment" required></select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Credential ID Production
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <select id="credentialProd" name="credentialProd" aria-label="Environment" required></select>
+                    </div>
+                </div>
+
+            </form>
+
+            <hr>
+
+            <div style="float: right;">
+                <?php
+                if ($credentialID > 0) {
+                ?>
+                <button class="secondary" id="btnCredentialMappingDelete" onclick="window.location.href='?credentials&delete&credentialID='+<?=$credentialID?>"><i class="fa-solid fa-trash"></i> Delete</button>
+                <?php
+                } else {
+                ?>
+                <button id="btnCredentialMappingAdd">
+                    <i class="fa-solid fa-plus"></i> Add
+                </button>
+                <?php
+                }
+                ?>
+                    
+                
+            </div>
+        
+        </div>
+
+
+        <?php
+        } else if ($contextType == "credential") {
+        ?>
+
+
+
+        <div style="padding-left: 24px; padding-right: 24px;" id="formCredential">
+            <form method="POST">
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Server
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <select id="newCredentialServerSelection" aria-label="Server selection" required>
+                            <?php
+                                if (isset($_SESSION["server"])) {
+                                    $server = $_SESSION["server"];
+                                    foreach ($server as $key => $value) {
+                                        ?><option value="<?=$key?>"><?=$value["description"]." (".$value["host"].")"?></option><?php
+                                    }
+                                }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Credential ID
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input type="text" name="credentialID" id="credentialID" value="<?=$credentialID?>" readonly="readonly" disabled>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Name
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="name" type="text" id="name" placeholder="Name" value=""/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Host
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="host" type="text" id="host" placeholder="Host" value=""/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Port
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="port" type="number" id="port" placeholder="Port" value="3306"/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Database
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="database" type="text" id="database" placeholder="Database" value=""/>
                     </div>
                 </div>
 
@@ -113,16 +256,34 @@
                         Username
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input name="username" type="text" id="username" placeholder="Username" value="<?=$username?>"/>
+                        <input name="user" type="text" id="user" placeholder="Username" value=""/>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-sm-4 col-xs-12 labelColumn">
-                        Fullname
+                        Password
                     </div>
                     <div class="col-sm-8 col-xs-12">
-                        <input name="fullname" type="text" id="fullname" placeholder="Fullname" value="<?=$fullname?>"/>
+                        <input name="password" type="text" id="password" placeholder="Password" value=""/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Pool max size
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="pool_max_size" type="number" id="pool_max_size" placeholder="Pool max size" value="0"/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Pool timeout in seconds
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="pool_timeout_s" type="number" id="pool_timeout_s" placeholder="Pool timeout" value="0"/>
                     </div>
                 </div>
 
@@ -133,27 +294,25 @@
 
             <div style="float: right;">
                 <?php
-                if ($userID > 0) {
+                if ($credentialID > 0) {
                 ?>
-                <button class="secondary" id="btnUserDelete" onclick="window.location.href='?user&delete&userID='+<?=$userID?>"><i class="fa-solid fa-trash"></i> Delete</button>
+                <button class="secondary" id="btnCredentialDelete" onclick="window.location.href='?credentials&delete&credentialID='+<?=$credentialID?>"><i class="fa-solid fa-trash"></i> Delete</button>
+                <?php
+                } else {
+                ?>
+                <button id="btnCredentialAdd">
+                    <i class="fa-solid fa-plus"></i> Add
+                </button>
                 <?php
                 }
                 ?>
-                <button id="btnUserAdd">
-                    <?php
-                    if ($userID > 0) {
-                    ?>
-                    <i class="fa-solid fa-floppy-disk"></i> Save
-                    <?php
-                    } else {
-                    ?>
-                    <i class="fa-solid fa-plus"></i> Add
-                    <?php
-                    }
-                    ?>
                     
-                </button>
+                
             </div>
+
+            <?php
+            }
+            ?>
         
         </div>
     
@@ -161,4 +320,4 @@
     </article>
 </dialog>
 
-<script src="pages/uiUserManagement/userManagement.js"></script>
+<script src="pages/uiCredentials/credentials.js"></script>
