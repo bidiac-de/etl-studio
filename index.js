@@ -1,3 +1,7 @@
+/**
+ * Dark theme initialization
+ * Checks localStorage for dark theme preference and applies it to the HTML element
+ */
 var darktheme = JSON.parse(localStorage.getItem("darktheme"));
 if (darktheme == null) {
     darktheme = true;
@@ -7,12 +11,19 @@ if (darktheme) {
     $("html").attr("data-theme", "dark");
 }
 
-
+/**
+ * Main ETL namespace object
+ * Contains all ETL Studio functionality organized into modules
+ * @namespace ETL
+ */
 var ETL = {};
 
 
-/** Console */
-
+/**
+ * Console module for ETL Studio
+ * Provides logging functionality with timestamp support and localStorage persistence
+ * @namespace ETL.console
+ */
 ETL.console = {};
 
 /**
@@ -82,10 +93,24 @@ ETL.console.onChangeHandler = function(log) {}
 
 
 
-/** API */
-
+/**
+ * API module for ETL Studio
+ * Provides HTTP request functionality and error handling for server communication
+ * @namespace ETL.api
+ */
 ETL.api = ETL.api || {};
 
+/**
+ * Handles API error responses and displays user-friendly error messages
+ * @param {Object} data - The error response data from the server
+ * @param {Object} data.responseJSON - JSON response containing error details
+ * @param {string} data.statusText - HTTP status text
+ * @param {Array} data.responseJSON.detail - Array of error detail objects
+ * @param {string} data.responseJSON.detail[].msg - Error message
+ * @param {Array} data.responseJSON.detail[].loc - Error location array
+ * @param {Object} data.responseJSON.detail[].input - Input component information
+ * @param {string} data.responseJSON.detail[].input.name - Component name
+ */
 ETL.api.onError = function(data) {
     console.log(data);
 
@@ -118,6 +143,14 @@ ETL.api.onError = function(data) {
     
 }
 
+/**
+ * Performs a GET request to the specified server endpoint
+ * @param {number} [serverID=0] - The server ID to make the request to
+ * @param {string} [endpoint=""] - The API endpoint path
+ * @param {Object} [data={}] - Query parameters to send with the request
+ * @param {boolean} [showError=false] - Whether to display error messages to the user
+ * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
+ */
 ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
@@ -143,6 +176,14 @@ ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false
     });
 }
 
+/**
+ * Performs a POST request to the specified server endpoint
+ * @param {number} [serverID=0] - The server ID to make the request to
+ * @param {string} [endpoint=""] - The API endpoint path
+ * @param {Object} [data={}] - JSON data to send in the request body
+ * @param {boolean} [showError=false] - Whether to display error messages to the user
+ * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
+ */
 ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
@@ -169,6 +210,14 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = fals
     });
 }
 
+/**
+ * Performs a PUT request to the specified server endpoint
+ * @param {number} [serverID=0] - The server ID to make the request to
+ * @param {string} [endpoint=""] - The API endpoint path
+ * @param {Object} [data={}] - JSON data to send in the request body
+ * @param {boolean} [showError=false] - Whether to display error messages to the user
+ * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
+ */
 ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
@@ -195,6 +244,13 @@ ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false
     });
 }
 
+/**
+ * Performs a DELETE request to the specified server endpoint
+ * @param {number} [serverID=0] - The server ID to make the request to
+ * @param {string} [endpoint=""] - The API endpoint path
+ * @param {boolean} [showError=false] - Whether to display error messages to the user
+ * @returns {Promise<boolean>} Promise that resolves to true on success or false on error
+ */
 ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
     return new Promise(function(resolve, reject) {
         if (server[serverID] != undefined) {
@@ -221,10 +277,28 @@ ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
 
 
 
-/** Render */
-
+/**
+ * Render module for ETL Studio
+ * Provides HTML generation functionality for forms and UI components
+ * @namespace ETL.render
+ */
 ETL.render = ETL.render || {};
 
+/**
+ * Converts a property schema to HTML form input
+ * @param {Object} property - The property schema object
+ * @param {string} property.name - The property name
+ * @param {boolean} property.required - Whether the property is required
+ * @param {Object} property.schema - The JSON schema for the property
+ * @param {string} property.schema.type - The data type (string, integer, boolean, select)
+ * @param {string} property.schema.description - Description of the property
+ * @param {string} property.schema.title - Display title for the property
+ * @param {*} property.schema.default - Default value for the property
+ * @param {Array} property.schema.enum - Enum values for select type
+ * @param {number} property.minimum - Minimum value for integer type
+ * @param {*} [defaultValue] - Override default value
+ * @returns {string} HTML string for the form input
+ */
 ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
     //console.log(property);
     var propertyName = property["name"];
@@ -264,6 +338,12 @@ ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
     return jobDetailsFieldsetHTML;
 }
 
+/**
+ * Renders HTML form for job editing based on job configuration schema
+ * @param {number} serverID - The server ID to fetch configuration from
+ * @param {string|number} [jobID] - Optional job ID to load existing job data
+ * @returns {Promise<string|boolean>} Promise that resolves to HTML string or false on error
+ */
 ETL.render.jobEdit = function(serverID, jobID = undefined) {
     return new Promise(function(resolve, reject) {
         ETL.api.get(serverID, "/configs/job").then(function(rawJsonData) {
@@ -302,6 +382,11 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
     });
 }
 
+/**
+ * Renders HTML form for component editing based on component configuration schema
+ * @param {string|number} componentID - The component ID to edit
+ * @returns {Promise<string|boolean>} Promise that resolves to HTML string or false on error
+ */
 ETL.render.componentEdit = function(componentID) {
     return new Promise(function(resolve, reject) {
 
@@ -379,15 +464,31 @@ ETL.render.componentEdit = function(componentID) {
 
 
 
-/** Util */
-
+/**
+ * Utility module for ETL Studio
+ * Provides helper functions for data processing, formatting, and UI interactions
+ * @namespace ETL.util
+ */
 ETL.util = ETL.util || {};
 
+/**
+ * Resolves JSON Schema references within a schema object
+ * @param {Object} schema - The schema object containing references
+ * @param {string} ref - The reference path (e.g., "#/definitions/MyType")
+ * @returns {*} The resolved schema object or undefined if not found
+ */
 ETL.util.resolveLocal = function(schema, ref) {
     const path = ref.replace(/^#\//, "").split("/");
     return path.reduce((acc, k) => acc && acc[k], schema);
 }
 
+/**
+ * Recursively dereferences JSON Schema objects, resolving all $ref references
+ * @param {*} obj - The object to dereference
+ * @param {*} [root=obj] - The root schema object for reference resolution
+ * @param {WeakMap} [seen=new WeakMap()] - Map to track circular references
+ * @returns {*} The dereferenced object with all $ref resolved
+ */
 ETL.util.deref = function(obj, root = obj, seen = new WeakMap()) {
     if (Array.isArray(obj)) {
         return obj.map(i => ETL.util.deref(i, root, seen));
@@ -415,6 +516,11 @@ ETL.util.deref = function(obj, root = obj, seen = new WeakMap()) {
     return obj;
 }
 
+/**
+ * Formats a date object to German locale string format
+ * @param {Date} [date=new Date()] - The date to format
+ * @returns {string} Formatted date string in German locale (DD.MM.YYYY, HH:MM:SS)
+ */
 ETL.util.formatDate = function(date = new Date()) {
     return date.toLocaleString("de-DE", {
         year: "numeric",
@@ -426,12 +532,22 @@ ETL.util.formatDate = function(date = new Date()) {
     });
 }
 
+/**
+ * Displays an alert dialog with custom header and message
+ * @param {string} [header="Alert"] - The alert dialog header text
+ * @param {string} [message=""] - The alert dialog message content (supports HTML)
+ */
 ETL.util.alert = function(header = "Alert", message = "") {
     $("#alertDialog").attr("open", "");
     $("#alertDialog h2").html(header);
     $("#alertDialog p").html(message);
 }
 
+/**
+ * Extracts form data from a DOM element containing form inputs
+ * @param {jQuery|HTMLElement} element - The DOM element containing form inputs
+ * @returns {Object} Object containing form field names as keys and their values
+ */
 ETL.util.getFormData = function(element) {
     var postData = {};
     var newJobInput = $(element).find(".formInput");
@@ -452,6 +568,10 @@ ETL.util.getFormData = function(element) {
     return postData;
 }
 
+/**
+ * Export for Node.js/CommonJS environments
+ * Makes the ETL object available for module imports
+ */
 // Export for Node.js/CommonJS
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ETL;
