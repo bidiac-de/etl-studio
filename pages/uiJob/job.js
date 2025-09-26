@@ -6,7 +6,7 @@ var components = {};
 var currentJobJson;
 var codemirror;
 
-var tmpFieldSettings = [];
+//var tmpFieldSettings = [];
 
 
 if (jobID != "0") {
@@ -31,6 +31,7 @@ if (jobID != "0") {
     });
 
     $("#btnOpenTerminalFooter").click(function() {
+        return;
         $("#console").slideToggle(50);
         $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
     });
@@ -127,6 +128,7 @@ if (jobID != "0") {
     });
 
     $("#btnSave").click(function() {
+        $("#btnSave").prop("disabled", true);
         exportToJson().then(function(json) {
             ETL.api.put(serverID, "/jobs/"+jobID, json, true).then(function(data) {
                 //console.log(data);
@@ -293,6 +295,7 @@ if (jobID != "0") {
             $('#componentEditDialog').removeAttr('open');
             editor.updateConnectionNodes(contextMenuSelectedComponent);
         }
+        onWhiteboardChange();
     }
 
     $(document).on("dblclick", ".component", function(event) {
@@ -310,12 +313,12 @@ if (jobID != "0") {
         if (contextMenuSelectedComponent != undefined) {
             selectedOutPortName = $(this).parent().parent().children().first().html();
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
-            var selectedNode = editor.getNodeFromId(selectedComponentID);
-            var updateData = selectedNode.data;
-            tmpFieldSettings = [];
+            //var selectedNode = editor.getNodeFromId(selectedComponentID);
+            //var updateData = selectedNode.data;
+            /*tmpFieldSettings = [];
             if (updateData["out_port_schemas"] != undefined && updateData["out_port_schemas"][selectedOutPortName] != undefined && updateData["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
                 tmpFieldSettings = updateData["out_port_schemas"][selectedOutPortName]["fields"];
-            }
+            }*/
             //console.log(tmpFieldSettings);
             openFieldDialog(selectedComponentID, selectedOutPortName);
         }
@@ -323,7 +326,7 @@ if (jobID != "0") {
 
     $(document).on("click", "#btnAddField", function() {
         if (contextMenuSelectedComponent != undefined) {
-            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            /*var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
 
             var newFieldName = $("#newFieldName").val();
             var newFieldDataType = $("#newFieldDataType").val();
@@ -339,24 +342,92 @@ if (jobID != "0") {
                 openFieldDialog(selectedComponentID, selectedOutPortName);
             } else {
                 $("#newFieldName").attr("aria-invalid", "true");
-            }   
+            }   */
+
+            
+            var html = createFieldDefElement();
+            $("#fieldDefDialogMainTable").append(html);
 
         }
     });
 
+
+    $(document).on("click", ".btnDeleteFieldDef", function() {
+        $(this).closest("tr").remove();
+    });
+
+
+    function createFieldDefElement(name = "", type = "", nullable = false) {
+        dataTypeDefEnum = [
+            "string",
+            "integer",
+            "float",
+            "boolean",
+            "object",
+            "array",
+            "enum",
+            "path"
+        ];
+
+        var html = "<tr>";
+        html += "<td><input type='text' placeholder='Name' value='"+name+"' class='name' /></td>";
+        html += "<td><select class='dataType'>";
+        for (var item of dataTypeDefEnum) {
+            var selected = item == type ? "selected" : "";
+            html += "<option value='"+item+"' "+selected+">"+item+"</option>";
+        }
+        html += "</select></td>";
+        var checked = nullable ? "checked" : "";
+        html += "<td><input type='checkbox' "+checked+" class='nullable' /></td>";
+        html += "<td><button class='secondary'><i class='fa-solid fa-plus'></i></button> <button class='pico-background-red-550 btnDeleteFieldDef'><i class='fa-solid fa-trash'></i></button></td>";
+        html += "</tr>";
+
+        return html;
+    }
+
     $(document).on("click", "#btnSaveFieldDef", function() {
+
         if (contextMenuSelectedComponent != undefined) {
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
             var selectedNode = editor.getNodeFromId(selectedComponentID);
             var updateData = selectedNode.data;
+
+            var fields = [];
+            var tableBodyFields = $("#tableBodyFields tr");
+            var isError = false;
+
+            for (var line of tableBodyFields) {
+
+                var name = $(line).find(".name").val();
+                var dataType = $(line).find(".dataType").val();
+                var nullable = $(line).find(".nullable").prop("checked");
+
+                if (name == "") {
+                    $(line).find(".name").attr("aria-invalid", "true");
+                    isError = true;
+                } else {
+                    $(line).find(".name").removeAttr("aria-invalid");
+                    fields.push({
+                        "name": name,
+                        "data_type": dataType,
+                        "nullable": nullable
+                    });
+                }
+            }
+
+            if (isError) {
+                return;
+            }
+
             if (typeof updateData["out_port_schemas"] == "object") {
                 if (typeof updateData["out_port_schemas"][selectedOutPortName] != "object") {
                     updateData["out_port_schemas"][selectedOutPortName] = {
                         fields: []
                     }
                 }
-                updateData["out_port_schemas"][selectedOutPortName]["fields"] = tmpFieldSettings;
+                updateData["out_port_schemas"][selectedOutPortName]["fields"] = fields;
             }
+            
             editor.updateNodeDataFromId(selectedComponentID, updateData);
             $('#fieldDefDialog').removeAttr('open');
 
@@ -365,62 +436,26 @@ if (jobID != "0") {
     });
 
 
-    function openFieldDialog(selectedComponentID) {
+    function openFieldDialog(selectedComponentID, selectedOutPortName) {
         
         var selectedNode = editor.getNodeFromId(selectedComponentID);
         var data = selectedNode.data;
-        var compType = data["comp_type"];
+        var fields = [];
 
-        ETL.api.get(serverID, "/configs/"+compType+"/full").then(function(compTypeData) {
-            compTypeData = ETL.util.deref(compTypeData);
-            //console.log(compTypeData);
+        console.log(data);
 
-            var fieldDef = compTypeData["$defs"]["FieldDef"];
-            var fieldDefProperties = fieldDef.properties;
-            var nameDef = fieldDefProperties["name"];
-            var dataTypeDef = fieldDefProperties["data_type"];
-            var nullableDef = fieldDefProperties["nullable"];
+        if (data["out_port_schemas"] != undefined && data["out_port_schemas"][selectedOutPortName] != undefined && data["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
+            fields = data["out_port_schemas"][selectedOutPortName]["fields"];
+        }
 
-            var html = "";
-            html += "<table><thead><tr><th>"+nameDef.title+"</th><th>"+dataTypeDef.title+"</th><th>"+nullableDef.title+"</th><th></th></tr></thead><tbody id='tableBodyFields'>";
+        $("#tableBodyFields").html("");
 
-            for (var field of tmpFieldSettings) {
+        for (var field of fields) {
+            var html = createFieldDefElement(field["name"], field["data_type"], field["nullable"]);
+            $("#tableBodyFields").append(html);
+        }
 
-                var nullableValue = field["nullable"] == true ? "checked" : "";
-                
-                html += "<tr>";
-                html += "<td><input type='text' placeholder='"+nameDef.title+"' value='"+field["name"]+"' /></td>";
-                html += "<td><select aria-label='"+dataTypeDef.title+"' value='"+field["data_type"]+"' >";
-                for (var item of dataTypeDef.enum) {
-                    var dataTypeSelected = field["data_type"] == item ? "selected" : "";
-                    html += "<option value='"+item+"' "+dataTypeSelected+">"+item+"</option>";
-                }
-                html += "</select></td>";
-                html += "<td><input type='checkbox' "+nullableValue+" /></td>";
-                html += "<td><button class='secondary'><i class='fa-solid fa-gear'></i></button> <button class='pico-background-red-550'><i class='fa-solid fa-trash'></i></button></td>";
-                html += "</tr>";
-            }
-
-
-            html += "<tr>";
-            html += "<td><input type='text' placeholder='"+nameDef.title+"' id='newFieldName' /></td>";
-            html += "<td><select aria-label='"+dataTypeDef.title+"' id='newFieldDataType'>";
-            for (var item of dataTypeDef.enum) {
-                html += "<option value='"+item+"'>"+item+"</option>";
-            }
-            html += "</select></td>";
-            html += "<td><input type='checkbox' id='newFieldNullable' /></td>";
-            html += "<td><button id='btnAddField'><i class='fa-solid fa-plus'></i> Add</button></td>";
-            html += "</tr>";
-
-            html += "</tbody></table>";
-
-
-            $("#fieldDefDialogMain").html(html);
-            $("#fieldDefDialog").attr("open", "");
-
-        });
-
+        $("#fieldDefDialog").attr("open", "");
         
     }
 
@@ -505,6 +540,8 @@ if (jobID != "0") {
                 }
 
             }
+            resolve();
+            $("#btnSave").prop("disabled", true);
         });
         
     }
@@ -746,6 +783,10 @@ if (jobID != "0") {
         return false;
     }
 
+    function onWhiteboardChange() {
+        $("#btnSave").prop("disabled", false);
+    }
+
 
     $(document).on("click", function() {
         $("#contextMenu").hide();
@@ -796,6 +837,14 @@ if (jobID != "0") {
         }
 
     });
+
+    editor.on("nodeCreated", onWhiteboardChange);
+    editor.on("nodeRemoved", onWhiteboardChange);
+    editor.on("nodeDataChanged", onWhiteboardChange);
+    editor.on("nodeMoved", onWhiteboardChange);
+    editor.on("connectionCreated", onWhiteboardChange);
+    editor.on("connectionRemoved", onWhiteboardChange);
+
 
 
     function loadJob(importWhiteboard = true) {

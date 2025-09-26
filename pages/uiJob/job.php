@@ -34,9 +34,9 @@
             <button class="outline secondary" data-tooltip="Execute" data-placement="bottom" id="btnExecuteScript">
                 <i class="fa-solid fa-play"></i>
             </button>
-            <button class="outline secondary" data-tooltip="Console" data-placement="bottom" id="btnOpenConsole">
+            <!--<button class="outline secondary" data-tooltip="Console" data-placement="bottom" id="btnOpenConsole">
                 <i class="fa-solid fa-terminal"></i>
-            </button>
+            </button>-->
             <button class="outline secondary" data-tooltip="JSON" data-placement="bottom" id="btnJSON">
                 <i class="fa-solid fa-code"></i>
             </button>
@@ -174,7 +174,16 @@
                     </div>
                 </header>
                 
-                <div id="fieldDefDialogMain"></div>
+                <div id="fieldDefDialogMain">
+                    <button id='btnAddField'><i class='fa-solid fa-plus'></i> Add field</button><br><br>
+                    <table id="fieldDefDialogMainTable">
+                        <thead>
+                            <tr><th>Name</th><th>DataType</th><th>Nullable</th><th></th></tr>
+                        </thead>
+                        <tbody id='tableBodyFields'>
+                        </tbody>
+                    </table>
+                </div>
 
                 <footer>
                     <button id="btnSaveFieldDef"><i class="fa-solid fa-floppy-disk"></i> Save</button>

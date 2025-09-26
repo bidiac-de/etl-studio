@@ -100,6 +100,8 @@ ETL.console.onChangeHandler = function(log) {}
  */
 ETL.api = ETL.api || {};
 
+ETL.api.timeout = 2000;
+
 /**
  * Handles API error responses and displays user-friendly error messages
  * @param {Object} data - The error response data from the server
@@ -159,7 +161,7 @@ ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false
                 url: url,
                 data: data,
                 method: "GET",
-                timeout: 2000,
+                timeout: ETL.api.timeout,
                 success: function(data) {
                     resolve(data);
                 },
@@ -192,7 +194,7 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = fals
                 url: url,
                 data: JSON.stringify(data),
                 method: "POST",
-                timeout: 2000,
+                timeout: ETL.api.timeout,
                 contentType: "application/json; charset=utf-8",
                 success: function(data) {
                     resolve(data);
@@ -226,7 +228,7 @@ ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false
                 url: url,
                 data: JSON.stringify(data),
                 method: "PUT",
-                timeout: 2000,
+                timeout: ETL.api.timeout,
                 contentType: "application/json; charset=utf-8",
                 success: function(data) {
                     resolve(data);
