@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="pages/uiCredentials/credentials.css">
 
 <input type="hidden" value="<?=$contextType?>" id="contextType">
+<input type="hidden" value="<?=$credentialID?>" id="credentialID">
 
 <header class="container-fluid">
     <div class="grid">
@@ -36,7 +37,9 @@
                 <th><i class="fa-solid fa-key"></i> Name</th>
                 <th>Host</th>
                 <th>Port</th>
-                <th><i class="fa-solid fa-database"></i> Database</th>
+                <th>Database</th>
+                <th>User</th>
+                <th>Password</th>
                 <th class="tableFit"></th>
             </tr>
         </thead>

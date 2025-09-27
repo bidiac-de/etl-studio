@@ -68,6 +68,12 @@ if (jobID != "0") {
             environment: environment
         }, true).then(function(data) {
             console.log(data);
+            if (data !== false) {
+                if (data.status == "started") {
+                    ETL.util.alert("<i class='fa-solid fa-circle-check pico-color-green-550'></i> Job started sucessfully");
+                }
+            }
+            
         });
     });
 
@@ -299,12 +305,9 @@ if (jobID != "0") {
     }
 
     $(document).on("dblclick", ".component", function(event) {
-        //console.log(event);
         var component = $(event.currentTarget).closest(".component");
-        //console.log(component);
         if (component.length == 1) {
             contextMenuSelectedComponent = $(component).attr("id");
-            //$("#contextMenuEditBtn").click();
             contextMenuEditBtn();
         }
     });
@@ -313,41 +316,14 @@ if (jobID != "0") {
         if (contextMenuSelectedComponent != undefined) {
             selectedOutPortName = $(this).parent().parent().children().first().html();
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
-            //var selectedNode = editor.getNodeFromId(selectedComponentID);
-            //var updateData = selectedNode.data;
-            /*tmpFieldSettings = [];
-            if (updateData["out_port_schemas"] != undefined && updateData["out_port_schemas"][selectedOutPortName] != undefined && updateData["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
-                tmpFieldSettings = updateData["out_port_schemas"][selectedOutPortName]["fields"];
-            }*/
-            //console.log(tmpFieldSettings);
             openFieldDialog(selectedComponentID, selectedOutPortName);
         }
     });
 
     $(document).on("click", "#btnAddField", function() {
         if (contextMenuSelectedComponent != undefined) {
-            /*var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
-
-            var newFieldName = $("#newFieldName").val();
-            var newFieldDataType = $("#newFieldDataType").val();
-            var newFieldNullable = $("#newFieldNullable").prop("checked");
-
-            if (newFieldName != "") {
-                tmpFieldSettings.push({
-                    "name": newFieldName,
-                    "data_type": newFieldDataType,
-                    "nullable": newFieldNullable
-                });
-
-                openFieldDialog(selectedComponentID, selectedOutPortName);
-            } else {
-                $("#newFieldName").attr("aria-invalid", "true");
-            }   */
-
-            
             var html = createFieldDefElement();
             $("#fieldDefDialogMainTable").append(html);
-
         }
     });
 
@@ -356,8 +332,37 @@ if (jobID != "0") {
         $(this).closest("tr").remove();
     });
 
+    $(document).on("click", ".btnAddSubFieldDef", function() {
+        var parentTr = $(this).closest("tr");
+        var depth = parseInt($(parentTr).attr("depth")) + 1;
 
-    function createFieldDefElement(name = "", type = "", nullable = false) {
+        var dataType = $(parentTr).find(".dataType").val();
+        if (dataType == "array" && $(parentTr).next().attr("depth") == depth) {
+            return;
+        }
+        var html = "";
+        if (dataType == "enum") {
+            html = createFieldDefElement(depth, "", "", false, true);
+        } else {
+            html = createFieldDefElement(depth);
+        }
+        $(html).insertAfter(parentTr);
+    });
+
+    $(document).on("change", ".dataType", function() {
+        var dataType = $(this).val();
+        var parentTr = $(this).closest("tr");
+        var btnAddSubFieldDef = $(parentTr).find(".btnAddSubFieldDef");
+
+        if (dataType == "object" || dataType == "array" || dataType == "enum") {
+            $(btnAddSubFieldDef).prop("disabled", false);
+        } else {
+            $(btnAddSubFieldDef).prop("disabled", true);
+        }
+    });
+
+
+    function createFieldDefElement(depth = 0, name = "", type = "", nullable = false, isEnum = false) {
         dataTypeDefEnum = [
             "string",
             "integer",
@@ -369,20 +374,70 @@ if (jobID != "0") {
             "path"
         ];
 
-        var html = "<tr>";
-        html += "<td><input type='text' placeholder='Name' value='"+name+"' class='name' /></td>";
-        html += "<td><select class='dataType'>";
-        for (var item of dataTypeDefEnum) {
-            var selected = item == type ? "selected" : "";
-            html += "<option value='"+item+"' "+selected+">"+item+"</option>";
+        var left = 14 + 10 * depth;
+        var spaces = "";
+        for (var i = 0; i < depth * 10; i++) {
+            spaces += "&nbsp;";
         }
-        html += "</select></td>";
-        var checked = nullable ? "checked" : "";
-        html += "<td><input type='checkbox' "+checked+" class='nullable' /></td>";
-        html += "<td><button class='secondary'><i class='fa-solid fa-plus'></i></button> <button class='pico-background-red-550 btnDeleteFieldDef'><i class='fa-solid fa-trash'></i></button></td>";
+        var html = "<tr depth='"+depth+"'>";
+        html += "<td style='padding-left: "+left+"px;'><input type='text' placeholder='Name' value='"+name+"' class='name' /></td>";
+        if (!isEnum) {
+            html += "<td><select class='dataType'>";
+            for (var item of dataTypeDefEnum) {
+                var selected = item == type ? "selected" : "";
+                html += "<option value='"+item+"' "+selected+">"+item+"</option>";
+            }
+            html += "</select></td>";
+            var checked = nullable ? "checked" : "";
+            html += "<td><input type='checkbox' "+checked+" class='nullable' /></td>";
+        } else {
+            html += "<td></td><td></td>";
+        }
+
+        var disabled = "disabled";
+        if (type == "object" || type == "array" || type == "enum") {
+            disabled = "";
+        }
+        
+        html += "<td><button class='secondary btnAddSubFieldDef' "+disabled+"><i class='fa-solid fa-plus'></i></button> <button class='pico-background-red-550 btnDeleteFieldDef'><i class='fa-solid fa-trash'></i></button></td>";
         html += "</tr>";
 
         return html;
+    }
+
+
+    function setValueAtPath(obj, path, value) {
+        let current = obj;
+        var dataType;
+        for (let i = 0; i < path.length - 1; i++) {
+            const key = path[i];
+            current = current[key];
+            if (current == undefined) {
+                break;
+            }
+            dataType = current["data_type"];
+            if (dataType == "object") {
+                current = current["children"];
+            } else if (dataType == "array") {
+                if (i < path.length - 2) {
+                    current = current["item"];
+                }
+            } else if (dataType == "enum") {
+                current = current["enum_values"];
+            }
+        }
+        if (dataType == "object") {
+            current[path[path.length - 1]] = value;
+        } else if (dataType == "array") {
+            if (current != undefined) {
+                current["item"] = value;
+            }
+        } else if (dataType == "enum") {
+            current[path[path.length - 1]] = value;
+        } else {
+            current[path[path.length - 1]] = value;
+        }
+        
     }
 
     $(document).on("click", "#btnSaveFieldDef", function() {
@@ -395,25 +450,55 @@ if (jobID != "0") {
             var fields = [];
             var tableBodyFields = $("#tableBodyFields tr");
             var isError = false;
+            var fieldPos = [];
 
-            for (var line of tableBodyFields) {
+            for (var index = 0; index < tableBodyFields.length; index++) {
 
+                var line = $(tableBodyFields[index]);
+                var depth = parseInt($(line).attr("depth"));
                 var name = $(line).find(".name").val();
                 var dataType = $(line).find(".dataType").val();
                 var nullable = $(line).find(".nullable").prop("checked");
-
+                
+            
                 if (name == "") {
                     $(line).find(".name").attr("aria-invalid", "true");
                     isError = true;
                 } else {
                     $(line).find(".name").removeAttr("aria-invalid");
-                    fields.push({
+
+                    if (fieldPos.length == depth) {
+                        fieldPos[depth] = 0;
+                    } else {
+                        fieldPos[depth]++;
+                    }
+
+                    var times = fieldPos.length - depth - 1;
+                    for (var i = 0; i < times; i++) {
+                        fieldPos.pop();
+                    }
+
+                    var field = {
                         "name": name,
                         "data_type": dataType,
                         "nullable": nullable
-                    });
+                    }
+
+                    if (dataType == "object") {
+                        field["children"] = [];
+                    } else if (dataType == "array") {
+                        field["item"] = null;
+                    } else if (dataType == "enum") {
+                        field["enum_values"] = [];
+                    } else if (dataType == undefined) {
+                        field = name;
+                    }
+                    
+                    setValueAtPath(fields, fieldPos, field);
                 }
             }
+
+            console.log(fields);
 
             if (isError) {
                 return;
@@ -451,7 +536,7 @@ if (jobID != "0") {
         $("#tableBodyFields").html("");
 
         for (var field of fields) {
-            var html = createFieldDefElement(field["name"], field["data_type"], field["nullable"]);
+            var html = createFieldDefElement(0, field["name"], field["data_type"], field["nullable"]);
             $("#tableBodyFields").append(html);
         }
 
