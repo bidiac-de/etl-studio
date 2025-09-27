@@ -113,7 +113,15 @@ module.exports = {
   
   // Reporter-Konfiguration
   reporters: [
-    'default'
+    'default',
+    ['jest-junit', {
+      outputDirectory: '.',
+      outputName: 'test-results.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+      ancestorSeparator: ' › ',
+      usePathForSuiteName: true
+    }]
   ],
   
   // Test-Suites-Konfiguration
