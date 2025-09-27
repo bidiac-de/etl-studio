@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/uiJob/job.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/uiJob/job.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var jobID = $("#jobID").val();
+var serverID = $("#serverID").val();
+
+var componentsTemplate = {};
+var components = {};
+var currentJobJson;
+var codemirror;
+
+//var tmpFieldSettings = [];
+
+
+if (jobID != "0") {
+
+    /**
+     * Handles console log changes by updating the console text area and scrolling to bottom
+     * @param {string} log - The console log content to display
+     */
+    ETL.console.onChangeHandler = function(log) {
+        $("#consoleText").val(log);
+        $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
+    }
+    ETL.console.log("open job id "+jobID);
+
+    $("#btnOpenConsole").click(function() {
+        $("#console").slideToggle(50);
+        $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
+    });
+
+    $("#btnCloseConsole").click(function() {
+        $("#console").slideUp(50);
+    });
+
+    $("#btnOpenTerminalFooter").click(function() {
+        return;
+        $("#console").slideToggle(50);
+        $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
+    });
+
+    $("#btnExecuteScript").click(function(event) {
+
+        allowExecutionMenuHide = false;
+        $("#executionMenu").css({ 
+            top: event.pageY + 15, 
+            left: event.pageX - 75
+        }).show();
+
+        setTimeout(function() {
+            allowExecutionMenuHide = true;
+        }, 1000);
+        
+        /*$("#console").slideDown(50);
+        ETL.console.log("upload job id " + jobID + " to execution server", true, "");
+        setInterval(function() {
+            ETL.console.log(".", false, "");
+        }, 1000);*/
+
+        /*ETL.api.post(serverID, "/execution/"+jobID, {}, true).then(function(data) {
+            console.log(data);
+        });*/
+
+    });
+
+    $(".btnExecutionMenu").click(function() {
+        var environment = $(this).attr("environment");
+        $("#executionMenu").hide();
+
+        ETL.api.post(serverID, "/execution/"+jobID, {
+            environment: environment
+        }, true).then(function(data) {
+            console.log(data);
+            if (data !== false) {
+                if (data.status == "started") {
+                    ETL.util.alert("&lt;i class='fa-solid fa-circle-check pico-color-green-550'>&lt;/i> Job started sucessfully");
+                }
+            }
+            
+        });
+    });
+
+    $("#btnConfirmDelete").click(function() {
+        ETL.api.delete(serverID, "/jobs/"+jobID).then(function(result) {
+            if (result) {
+                window.location.href="./";
+            }
+        });
+    });
+
+    $("#openComponentsDialog").click(function(event) {
+        $("#componentsTable").html("");
+        $("#componentDialog").attr("open", "");
+        ETL.api.get(serverID, "/configs/component_types/").then(function(componentTypes) {
+            if (componentTypes !== false) {
+
+                var promises = [];
+
+                for (var componentType of componentTypes) {
+                    promises.push(ETL.api.get(serverID, "/configs/"+componentType+"/form"));
+                }
+
+                Promise.allSettled(promises).then(function(data) {
+
+                    var componentTable = "";
+
+                    for (var componentPromise of data) {
+                        var component = ETL.util.deref(componentPromise.value);
+                        var componentTitle = component.title;
+                        var compType = component["comp-type"];
+                        var icon = component["icon"];
+
+                        if (typeof icon != "string") {
+                            icon = "fa-solid fa-question";
+                        }
+
+                        componentsTemplate[compType] = component;
+                        componentTable += "&lt;tr>&lt;td>&lt;div>&lt;i class=\""+icon+"\">&lt;/i>&lt;/div>&lt;/td>&lt;td>"+componentTitle+"&lt;/td>&lt;td>&lt;button class=\"secondary\" disabled>&lt;i class=\"fa-solid fa-sliders\">&lt;/i> Customize&lt;/button> &lt;button onclick=\"addComponentToWhiteboard('"+compType+"')\">&lt;i class=\"fa-solid fa-plus\">&lt;/i> Add&lt;/button>&lt;/td>&lt;/tr>";
+
+                        
+                    }
+
+                    $("#componentsTable").html(componentTable);
+                });
+
+            }
+        });
+    });
+
+    $("#btnSettings").click(function() {
+        ETL.render.jobEdit(serverID, jobID).then(function(result) {
+            if (result !== false) {
+                $("#settingsDialogMain").html(result);
+                $('#settingsDialog').attr('open', '');
+            }
+        });
+    });
+
+    $("#btnSave").click(function() {
+        $("#btnSave").prop("disabled", true);
+        exportToJson().then(function(json) {
+            ETL.api.put(serverID, "/jobs/"+jobID, json, true).then(function(data) {
+                //console.log(data);
+                loadJob(false);
+            });
+        });
+    });
+
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 's') {
+            e.preventDefault();
+            $("#btnSave").click();
+        }
+    });
+
+    $("#btnJSON").click(function() {
+        if (codemirror == undefined) {
+
+            $(this).html('&lt;i class="fa-solid fa-display">&lt;/i>');
+            $(this).attr("data-tooltip", "Whiteboard");
+            $("#openComponentsDialog").prop("disabled", true);
+
+            exportToJson().then(function(json) {
+
+                var codemirrorOptions = {
+                    mode: { 
+                        name: "javascript", 
+                        json: true 
+                    },
+                    lineNumbers: true,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    readOnly: true
+                };
+
+                if (darktheme) {
+                    codemirrorOptions.theme = "ayu-mirage";
+                }
+
+                codemirror = CodeMirror.fromTextArea(document.getElementById("codemirror"), codemirrorOptions);
+                codemirror.setSize("100%", "calc(100% - 70px)");
+                //codemirror.setValue(JSON.stringify(json, null, 2).replace(/"([^"]+)":/g, '$1:'));
+                codemirror.setValue(JSON.stringify(json, null, 2));
+
+            });
+        } else {
+            codemirror.toTextArea();
+            codemirror = undefined;
+
+            $(this).html('&lt;i class="fa-solid fa-code">&lt;/i>');
+            $(this).attr("data-tooltip", "JSON");
+            $("#openComponentsDialog").prop("disabled", false);
+        }
+        $("#codemirror").toggle();
+        $("#drawflow").toggle();
+
+        
+
+        
+    });
+
+    $("#btnSaveJobSettings").click(function() {
+        var postData = ETL.util.getFormData($("#settingsDialogMain"));
+        //console.log(postData);
+
+        ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+            if (data !== false) {
+                for (var key in postData) {
+                    data[key] = postData[key];
+                }
+                ETL.api.put(serverID, "/jobs/"+jobID, postData).then(function(data) {
+                    //console.log(data);
+                    if (data !== false) {
+                        window.location.reload();
+                    } else {
+                        ETL.util.alert("Server Error", "Unexpected response from server");
+                    }
+                });
+            }
+        });
+    });
+
+    $("#zoomNeutral").click(function() {
+        var maxSteps = 100;
+        while (editor.zoom != 1 &amp;&amp; maxSteps > 0) {
+            if (editor.zoom > 1) {
+                editor.zoom_out();
+            } else {
+                editor.zoom_in();
+            }
+            maxSteps--;
+        }
+    });
+
+    $("#zoomIncrement").click(function() {
+        for (var i = 0; i &lt; 10; i++) {
+            editor.zoom_in();
+        }
+    });
+
+    $("#zoomDecrement").click(function() {
+        for (var i = 0; i &lt; 10; i++) {
+            editor.zoom_out();
+        }
+    });
+
+    $("#contextMenuDeleteBtn").click(function() {
+        if (contextMenuSelectedComponent != undefined) {
+            editor.removeNodeId(contextMenuSelectedComponent);
+            contextMenuSelectedComponent = undefined;
+        }
+        if (contextMenuSelectedConnection != undefined) {
+            var nodeInput = contextMenuSelectedConnection[1].split("-")[1];
+            var nodeOutput = contextMenuSelectedConnection[2].split("-")[1];
+            var output = contextMenuSelectedConnection[3];
+            var input = contextMenuSelectedConnection[4];
+
+            editor.removeSingleConnection(nodeOutput, nodeInput, output, input);
+            contextMenuSelectedConnection = undefined;
+        }
+    });
+
+    $("#contextMenuEditBtn").click(function() {
+        contextMenuEditBtn();
+    });
+
+    function contextMenuEditBtn(hidden = false) {
+        return new Promise(function(resolve, reject) {
+            if (contextMenuSelectedComponent != undefined) {
+                if (!hidden) {
+                    $("#componentEditDialog").attr("open", "");
+                }
+                var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+
+                ETL.render.componentEdit(selectedComponentID).then(function(result) {
+                    if (result !== false) {
+                        $("#componentEditDialogMain").html(result);
+                        $("#btnSaveComponent").attr("disabled", false);
+                        resolve(true);
+                    } else {
+                        $("#componentEditDialogMain").html("No Server connection!");
+                        $("#btnSaveComponent").attr("disabled", true);
+                        resolve(false);
+                    }
+                });
+            }
+        });
+    }
+
+    $("#btnSaveComponent").click(btnSaveComponent);
+
+    function btnSaveComponent() {
+        if (contextMenuSelectedComponent != undefined) {
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            var newData = ETL.util.getFormData($("#componentEditDialogMain"));
+            var selectedNode = editor.getNodeFromId(selectedComponentID);
+            var updateData = selectedNode.data;
+            for (var key in newData) {
+                var value = newData[key];
+                updateData[key] = value;
+            }
+            editor.updateNodeDataFromId(selectedComponentID, updateData);
+            $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
+            $('#componentEditDialog').removeAttr('open');
+            editor.updateConnectionNodes(contextMenuSelectedComponent);
+        }
+        onWhiteboardChange();
+    }
+
+    $(document).on("dblclick", ".component", function(event) {
+        var component = $(event.currentTarget).closest(".component");
+        if (component.length == 1) {
+            contextMenuSelectedComponent = $(component).attr("id");
+            contextMenuEditBtn();
+        }
+    });
+
+    $(document).on("click", ".btnAddOutPortSchema", function() {
+        if (contextMenuSelectedComponent != undefined) {
+            selectedOutPortName = $(this).parent().parent().children().first().html();
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            openFieldDialog(selectedComponentID, selectedOutPortName);
+        }
+    });
+
+    $(document).on("click", "#btnAddField", function() {
+        if (contextMenuSelectedComponent != undefined) {
+            var html = createFieldDefElement();
+            $("#fieldDefDialogMainTable").append(html);
+        }
+    });
+
+
+    $(document).on("click", ".btnDeleteFieldDef", function() {
+        $(this).closest("tr").remove();
+    });
+
+    $(document).on("click", ".btnAddSubFieldDef", function() {
+        var parentTr = $(this).closest("tr");
+        var depth = parseInt($(parentTr).attr("depth")) + 1;
+
+        var dataType = $(parentTr).find(".dataType").val();
+        if (dataType == "array" &amp;&amp; $(parentTr).next().attr("depth") == depth) {
+            return;
+        }
+        var html = "";
+        if (dataType == "enum") {
+            html = createFieldDefElement(depth, "", "", false, true);
+        } else {
+            html = createFieldDefElement(depth);
+        }
+        $(html).insertAfter(parentTr);
+    });
+
+    $(document).on("change", ".dataType", function() {
+        var dataType = $(this).val();
+        var parentTr = $(this).closest("tr");
+        var btnAddSubFieldDef = $(parentTr).find(".btnAddSubFieldDef");
+
+        if (dataType == "object" || dataType == "array" || dataType == "enum") {
+            $(btnAddSubFieldDef).prop("disabled", false);
+        } else {
+            $(btnAddSubFieldDef).prop("disabled", true);
+        }
+    });
+
+
+    function createFieldDefElement(depth = 0, name = "", type = "", nullable = false, isEnum = false) {
+        dataTypeDefEnum = [
+            "string",
+            "integer",
+            "float",
+            "boolean",
+            "object",
+            "array",
+            "enum",
+            "path"
+        ];
+
+        var left = 14 + 10 * depth;
+        var spaces = "";
+        for (var i = 0; i &lt; depth * 10; i++) {
+            spaces += "&amp;nbsp;";
+        }
+        var html = "&lt;tr depth='"+depth+"'>";
+        html += "&lt;td style='padding-left: "+left+"px;'>&lt;input type='text' placeholder='Name' value='"+name+"' class='name' />&lt;/td>";
+        if (!isEnum) {
+            html += "&lt;td>&lt;select class='dataType'>";
+            for (var item of dataTypeDefEnum) {
+                var selected = item == type ? "selected" : "";
+                html += "&lt;option value='"+item+"' "+selected+">"+item+"&lt;/option>";
+            }
+            html += "&lt;/select>&lt;/td>";
+            var checked = nullable ? "checked" : "";
+            html += "&lt;td>&lt;input type='checkbox' "+checked+" class='nullable' />&lt;/td>";
+        } else {
+            html += "&lt;td>&lt;/td>&lt;td>&lt;/td>";
+        }
+
+        var disabled = "disabled";
+        if (type == "object" || type == "array" || type == "enum") {
+            disabled = "";
+        }
+        
+        html += "&lt;td>&lt;button class='secondary btnAddSubFieldDef' "+disabled+">&lt;i class='fa-solid fa-plus'>&lt;/i>&lt;/button> &lt;button class='pico-background-red-550 btnDeleteFieldDef'>&lt;i class='fa-solid fa-trash'>&lt;/i>&lt;/button>&lt;/td>";
+        html += "&lt;/tr>";
+
+        return html;
+    }
+
+
+    function setValueAtPath(obj, path, value) {
+        let current = obj;
+        var dataType;
+        for (let i = 0; i &lt; path.length - 1; i++) {
+            const key = path[i];
+            current = current[key];
+            if (current == undefined) {
+                break;
+            }
+            dataType = current["data_type"];
+            if (dataType == "object") {
+                current = current["children"];
+            } else if (dataType == "array") {
+                if (i &lt; path.length - 2) {
+                    current = current["item"];
+                }
+            } else if (dataType == "enum") {
+                current = current["enum_values"];
+            }
+        }
+        if (dataType == "object") {
+            current[path[path.length - 1]] = value;
+        } else if (dataType == "array") {
+            if (current != undefined) {
+                current["item"] = value;
+            }
+        } else if (dataType == "enum") {
+            current[path[path.length - 1]] = value;
+        } else {
+            current[path[path.length - 1]] = value;
+        }
+        
+    }
+
+    $(document).on("click", "#btnSaveFieldDef", function() {
+
+        if (contextMenuSelectedComponent != undefined) {
+            var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
+            var selectedNode = editor.getNodeFromId(selectedComponentID);
+            var updateData = selectedNode.data;
+
+            var fields = [];
+            var tableBodyFields = $("#tableBodyFields tr");
+            var isError = false;
+            var fieldPos = [];
+
+            for (var index = 0; index &lt; tableBodyFields.length; index++) {
+
+                var line = $(tableBodyFields[index]);
+                var depth = parseInt($(line).attr("depth"));
+                var name = $(line).find(".name").val();
+                var dataType = $(line).find(".dataType").val();
+                var nullable = $(line).find(".nullable").prop("checked");
+                
+            
+                if (name == "") {
+                    $(line).find(".name").attr("aria-invalid", "true");
+                    isError = true;
+                } else {
+                    $(line).find(".name").removeAttr("aria-invalid");
+
+                    if (fieldPos.length == depth) {
+                        fieldPos[depth] = 0;
+                    } else {
+                        fieldPos[depth]++;
+                    }
+
+                    var times = fieldPos.length - depth - 1;
+                    for (var i = 0; i &lt; times; i++) {
+                        fieldPos.pop();
+                    }
+
+                    var field = {
+                        "name": name,
+                        "data_type": dataType,
+                        "nullable": nullable
+                    }
+
+                    if (dataType == "object") {
+                        field["children"] = [];
+                    } else if (dataType == "array") {
+                        field["item"] = null;
+                    } else if (dataType == "enum") {
+                        field["enum_values"] = [];
+                    } else if (dataType == undefined) {
+                        field = name;
+                    }
+                    
+                    setValueAtPath(fields, fieldPos, field);
+                }
+            }
+
+            console.log(fields);
+
+            if (isError) {
+                return;
+            }
+
+            if (typeof updateData["out_port_schemas"] == "object") {
+                if (typeof updateData["out_port_schemas"][selectedOutPortName] != "object") {
+                    updateData["out_port_schemas"][selectedOutPortName] = {
+                        fields: []
+                    }
+                }
+                updateData["out_port_schemas"][selectedOutPortName]["fields"] = fields;
+            }
+            
+            editor.updateNodeDataFromId(selectedComponentID, updateData);
+            $('#fieldDefDialog').removeAttr('open');
+
+
+        }
+    });
+
+
+    function openFieldDialog(selectedComponentID, selectedOutPortName) {
+        
+        var selectedNode = editor.getNodeFromId(selectedComponentID);
+        var data = selectedNode.data;
+        var fields = [];
+
+        console.log(data);
+
+        if (data["out_port_schemas"] != undefined &amp;&amp; data["out_port_schemas"][selectedOutPortName] != undefined &amp;&amp; data["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
+            fields = data["out_port_schemas"][selectedOutPortName]["fields"];
+        }
+
+        $("#tableBodyFields").html("");
+
+        for (var field of fields) {
+            var html = createFieldDefElement(0, field["name"], field["data_type"], field["nullable"]);
+            $("#tableBodyFields").append(html);
+        }
+
+        $("#fieldDefDialog").attr("open", "");
+        
+    }
+
+
+    function importFromJson(data = {}) {
+        return new Promise(async function(resolve, reject) {
+            var components = data.components;
+            if (Array.isArray(components)) {
+                for (var component of components) {
+                    var compType = component["comp_type"];
+                    await addComponentToWhiteboard(compType, JSON.parse(JSON.stringify(component)));
+                }
+
+                for (var component of components) {
+                    //console.log(component);
+
+                    var outputID = getComponentIdFromName(component.name);
+                    var compType = component["comp_type"];
+
+                    if (component.routes != undefined) {
+                        for (var outputName in component.routes) {
+                            var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compType+"/full");
+                            var outputNameDrawflow;
+                            if (compTypeDataFull != false) {
+                                if (compTypeDataFull["x-class"] != undefined &amp;&amp; compTypeDataFull["x-class"]["output_port_names"] != undefined) {
+                                    for (var i in compTypeDataFull["x-class"]["output_port_names"]) {
+                                        if (compTypeDataFull["x-class"]["output_port_names"][i] == outputName) {
+                                            outputNameDrawflow = "output_"+(parseInt(i)+1);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (outputNameDrawflow != undefined) {
+                                var connections = component.routes[outputName];
+                                for (var connection of connections) {
+                                    //console.log(connection);
+
+                                    var inputID = getComponentIdFromName(connection.to);
+                                    var inputName = connection["in_port"];
+                                    var compTypeInput = editor.getNodeFromId(inputID).data["comp_type"];
+
+                                    var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compTypeInput+"/full");
+                                    var inputNameDrawflow;
+                                    if (compTypeDataFull != false) {
+                                        if (compTypeDataFull["x-class"] != undefined &amp;&amp; compTypeDataFull["x-class"]["input_port_names"] != undefined) {
+                                            for (var i in compTypeDataFull["x-class"]["input_port_names"]) {
+                                                if (compTypeDataFull["x-class"]["input_port_names"][i] == inputName) {
+                                                    inputNameDrawflow = "input_"+(parseInt(i)+1);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (inputNameDrawflow != undefined) {
+                                        //console.log(outputID, outputNameDrawflow, inputID, inputNameDrawflow);
+                                        editor.addConnection(outputID, inputID, outputNameDrawflow, inputNameDrawflow);
+                                    }
+
+
+                                    
+                                }
+
+                            }
+                            
+                        }
+                    }
+
+                    
+                    // addConnection(id_output, id_input, output_class, input_class)
+                }
+
+
+                for (var component of $(".component")) {
+                    contextMenuSelectedComponent = $(component).attr("id");
+                    var result = await contextMenuEditBtn(true);
+                    if (result == true) {
+                        btnSaveComponent();
+                    }
+                }
+
+            }
+            resolve();
+            $("#btnSave").prop("disabled", true);
+        });
+        
+    }
+
+
+    function exportToJson() {
+        return new Promise(function(resolve, reject) {
+            ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+                if (data !== false) {
+
+                    var drawFlowExport = editor.export();
+                    var drawFlowComponents = drawFlowExport["drawflow"]["Home"]["data"];
+
+                    data["components"] = [];
+                    delete data["metadata_"];
+
+                    if (drawFlowComponents != undefined) {
+
+                        var promiseArray = [];
+
+                        for (var drawFlowComponentID in drawFlowComponents) {
+
+                            (function(drawFlowComponentID) {
+                                promiseArray.push(new Promise(async function(resolve2, reject2) {
+
+                                    var drawFlowComponent = drawFlowComponents[drawFlowComponentID];
+                                    var component = drawFlowComponent.data;
+                                    component["layout"] = {
+                                        "x_coordinate": drawFlowComponent.pos_x,
+                                        "y_coordinate": drawFlowComponent.pos_y
+                                    }
+                                    component["routes"] = {};
+                                    component["routes"]["out"] = [];
+
+                                    var outputs = drawFlowComponent.outputs;
+                                    for (var outputName in outputs) {
+                                        var output = outputs[outputName];
+                                        var connections = output.connections;
+                                        for (var connectionNo in connections) {
+                                            var connection = connections[connectionNo];
+                                            var nodeID = connection.node;
+                                            var node = editor.getNodeFromId(nodeID);
+                                            var to = node.data.name;
+                                            var toCompType = node.data["comp_type"];
+
+                                            var compTypeData = await ETL.api.get(serverID, "/configs/"+toCompType+"/full");
+                                            if (compTypeData != false) {
+                                                //console.log(compTypeData);
+                                                if (compTypeData["x-class"] != undefined &amp;&amp; compTypeData["x-class"]["input_ports"] != undefined) {
+                                                    var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
+                                                    if (compTypeData["x-class"]["input_ports"][inputPortConnectionNo] != undefined) {
+                                                        var inputName = compTypeData["x-class"]["input_ports"][inputPortConnectionNo]["name"];
+                                                        component["routes"]["out"].push({
+                                                            "to": to,
+                                                            "in_port": inputName
+                                                        });
+                                                    } 
+                                                }
+                                            }
+                                        }
+                                    }
+                                    resolve2(component);
+                                }));
+                            })(drawFlowComponentID);
+                            
+                        }
+
+                        Promise.all(promiseArray).then(function(components) {
+                            for (var component of components) {
+                                data["components"].push(component);
+                            }
+                            for (var i in data["components"]) {
+                                var component = data["components"][i];
+                                
+                                // delete empty objects and arrays
+                                for (var key in component) {
+                                    var value = component[key];
+                                    if (value != null) {
+                                        if (typeof value == "object") {
+                                            if (Object.keys(value) == 0) {
+                                                delete data["components"][i][key];
+                                            }
+                                        } else if (typeof value == "array") {
+                                            if (x.length == 0) {
+                                                delete data["components"][i][key];
+                                            }
+                                        }
+                                    } else {
+                                        //delete data["components"][i][key];
+                                    }
+                                    
+                                }
+
+                                if (typeof component["routes"] == "object" &amp;&amp; typeof component["out_port_schemas"] == "object") {
+                                    for (var outputName in component["routes"]) {
+                                        if (outputName in component["out_port_schemas"]) {
+                                            var fields = component["out_port_schemas"][outputName]["fields"];
+                                            for (var connection of component["routes"][outputName]) {
+                                                var to = connection.to;
+                                                var inputName = connection["in_port"];
+                                                for (var j in data["components"]) {
+                                                    if (data["components"][j]["name"] == to) {
+                                                        if (data["components"][j]["in_port_schemas"] == undefined) {
+                                                            data["components"][j]["in_port_schemas"] = {};
+                                                        }
+                                                        data["components"][j]["in_port_schemas"][inputName] = {
+                                                            "fields": fields
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                            console.log(data);
+                            resolve(data);
+                        });
+                    }
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+
+    function addComponentToWhiteboard(compType, component = {}) {
+
+        return new Promise(function(resolve, reject) {
+
+            ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
+                if (selectedComponentRaw !== false) {
+
+                    var selectedComponent = ETL.util.deref(selectedComponentRaw);
+                    //console.log(selectedComponent);
+
+                    var title = selectedComponent.title;
+                    var icon = selectedComponent.icon || "fa-solid fa-question";
+                    var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
+                    var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+
+                    var x_coordinate = 150;
+                    var y_coordinate = 300;
+
+                    if (typeof component.layout == "object") {
+                        if (component.layout["x_coordinate"] != undefined) {
+                            x_coordinate = component.layout["x_coordinate"];
+                        }
+                        if (component.layout["y_coordinate"] != undefined) {
+                            y_coordinate = component.layout["y_coordinate"];
+                        }
+                    }
+
+                    var componentProperties;
+
+                    if (Object.entries(component).length > 0) {
+
+                        componentProperties = component;
+                        delete componentProperties["layout"];
+                        delete componentProperties["metadata_"];
+                        delete componentProperties["routes"];
+                        delete componentProperties["in_port_schemas"];
+
+                    } else {
+
+                        componentProperties = {
+                            "comp_type": compType
+                        }
+
+                        for (var property of selectedComponent.properties) {
+                            var propertyName = property.name;
+                            var propertyValue = undefined;
+                            var propertyDefault = property.schema.default;
+                            var propertyType = property.schema.type;
+
+                            if (propertyType == "string") {
+                                propertyValue = propertyDefault || "";
+                            } else if (propertyType == "object") {
+                                propertyValue = propertyDefault || {};
+                            } else if (propertyType == "integer") {
+                                propertyValue = propertyDefault || 0;
+                            }
+
+                            if (propertyValue != undefined) {
+                                componentProperties[propertyName] = propertyValue;
+                            } else {
+                                componentProperties[propertyName] = {};
+                            }
+                        }
+
+                        if (componentProperties["name"] == "") {
+                            componentProperties["name"] = selectedComponent["title"];
+                        }
+
+                        while (componentNameExists(componentProperties["name"])) {
+                            componentProperties["name"] += "_new";
+                        }
+
+                    }
+
+                    var html = "&lt;span class='componentIcon'>&lt;i class='"+icon+"'>&lt;/i>&lt;/span>&lt;br>&lt;span class='componentName'>"+componentProperties["name"]+"&lt;/span>";
+
+                    var nodeID = editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
+
+                    $('#componentDialog').removeAttr('open');
+
+                    resolve(nodeID);
+                } else {
+                    resolve(false);
+                }
+            });
+
+        });
+
+    }
+
+
+    function getComponentIdFromName(name) {
+        var data = editor.export().drawflow.Home.data;
+        for (var i in data) {
+            var component = data[i];
+            if (component.data.name == name) {
+                return i;
+            }
+        }
+    }
+
+    function componentNameExists(name) {
+        var data = editor.export().drawflow.Home.data;
+        for (var i in data) {
+            var component = data[i];
+            if (component.data.name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function onWhiteboardChange() {
+        $("#btnSave").prop("disabled", false);
+    }
+
+
+    $(document).on("click", function() {
+        $("#contextMenu").hide();
+        if (allowExecutionMenuHide) {
+            $("#executionMenu").hide();
+        }
+    });
+
+    var allowExecutionMenuHide = true;
+    var drawflow = document.getElementById("drawflow");
+    var editor = new Drawflow(drawflow);
+    var contextMenuSelectedConnection;
+    var contextMenuSelectedComponent;
+    var selectedOutPortName;
+
+    editor.editor_mode = "edit";
+    editor.zoom_value = 0.01;
+    editor.reroute = false;
+    editor.snap = true;
+    editor.grid = true;
+    editor.grid_size = 20;
+
+    editor.start();
+
+    editor.on("zoom", function(zoom_level) {
+        $("#zoomText").html(Math.round(zoom_level * 100) + "%");
+    });
+
+    editor.on("contextmenu", function(event) {
+
+        var component = $(event.srcElement).closest(".component");
+        var connection = $(event.srcElement).closest(".connection");
+
+        if (component.length == 1 || connection.length == 1) {
+
+            $("#contextMenu").css({ 
+                top: event.pageY, 
+                left: event.pageX + 10
+            }).show();
+
+            if (component.length == 1) {
+                contextMenuSelectedComponent = $(component).attr("id");
+                $("#contextMenuEditBtn").show();
+            } else {
+                contextMenuSelectedConnection = $(connection).attr("class").split(" ");
+                $("#contextMenuEditBtn").hide();
+            }
+        }
+
+    });
+
+    editor.on("nodeCreated", onWhiteboardChange);
+    editor.on("nodeRemoved", onWhiteboardChange);
+    editor.on("nodeDataChanged", onWhiteboardChange);
+    editor.on("nodeMoved", onWhiteboardChange);
+    editor.on("connectionCreated", onWhiteboardChange);
+    editor.on("connectionRemoved", onWhiteboardChange);
+
+
+
+    function loadJob(importWhiteboard = true) {
+        ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
+            if (data !== false) {
+                var jobName = data["name"];
+                var jobLastChanged = ETL.util.formatDate(new Date(data["metadata_"]["timestamp"]));
+
+                $("#jobTitle").html(": "+jobName);
+                $("#lastChanged").html(jobLastChanged);
+
+                if (importWhiteboard) {
+                    importFromJson(data);
+                }
+
+            } else {
+                window.location.href="./";
+            }
+        });
+    }
+
+
+    loadJob();
+
+
+} else {
+
+
+    $("#newJobSaveButton").click(function() {
+        var postData = ETL.util.getFormData($("#jobDetailsFieldset"));
+        var serverID = $("#newJobServerSelection").find(":selected").val();
+
+        ETL.api.post(serverID, "/jobs/", postData).then(function(data) {
+            //console.log(data);
+            if (data !== false) {
+                window.location.href="./?serverID="+serverID+"&amp;job="+data;
+            }
+        });
+    });
+
+
+    $("#newJobServerSelection").change(function() {
+        var serverID = $(this).find(":selected").val();
+    
+        ETL.render.jobEdit(serverID).then(function(result) {
+            if (result !== false) {
+                $("#jobDetailsFieldset").html(result);
+                $("#newJobSaveButton").attr("disabled", false);
+            } else {
+                $("#jobDetailsFieldset").html("No Server connection!");
+                $("#newJobSaveButton").attr("disabled", true);
+            }
+        });
+
+    });
+
+
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="ETL.html">ETL</a></li><li><a href="ETL.api.html">api</a></li><li><a href="ETL.console.html">console</a></li><li><a href="ETL.render.html">render</a></li><li><a href="ETL.util.html">util</a></li></ul><h3>Global</h3><ul><li><a href="global.html#darktheme">darktheme</a></li><li><a href="global.html#validatePassword">validatePassword</a></li><li><a href="global.html#validateSqlitefilepath">validateSqlitefilepath</a></li><li><a href="global.html#validateUsername">validateUsername</a></li><li><a href="global.html#validationErrorText">validationErrorText</a></li><li><a href="global.html#validationOk">validationOk</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Sep 27 2025 13:45:16 GMT+0200 (Central European Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
