@@ -126,6 +126,24 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Password
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="password" type="password" id="password" placeholder="Password" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Repeat
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <input name="password2" type="password" id="password2" placeholder="Repeat" />
+                    </div>
+                </div>
+
 
             </form>
 

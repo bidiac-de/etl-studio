@@ -1,4 +1,32 @@
-var jobID = $("#jobID").val();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/uiJob/job.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/uiJob/job.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var jobID = $("#jobID").val();
 var serverID = $("#serverID").val();
 
 var componentsTemplate = {};
@@ -70,7 +98,7 @@ if (jobID != "0") {
             console.log(data);
             if (data !== false) {
                 if (data.status == "started") {
-                    ETL.util.alert("<i class='fa-solid fa-circle-check pico-color-green-550'></i> Job started sucessfully");
+                    ETL.util.alert("&lt;i class='fa-solid fa-circle-check pico-color-green-550'>&lt;/i> Job started sucessfully");
                 }
             }
             
@@ -112,7 +140,7 @@ if (jobID != "0") {
                         }
 
                         componentsTemplate[compType] = component;
-                        componentTable += "<tr><td><div><i class=\""+icon+"\"></i></div></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
+                        componentTable += "&lt;tr>&lt;td>&lt;div>&lt;i class=\""+icon+"\">&lt;/i>&lt;/div>&lt;/td>&lt;td>"+componentTitle+"&lt;/td>&lt;td>&lt;button class=\"secondary\" disabled>&lt;i class=\"fa-solid fa-sliders\">&lt;/i> Customize&lt;/button> &lt;button onclick=\"addComponentToWhiteboard('"+compType+"')\">&lt;i class=\"fa-solid fa-plus\">&lt;/i> Add&lt;/button>&lt;/td>&lt;/tr>";
 
                         
                     }
@@ -144,7 +172,7 @@ if (jobID != "0") {
     });
 
     document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 's') {
             e.preventDefault();
             $("#btnSave").click();
         }
@@ -153,7 +181,7 @@ if (jobID != "0") {
     $("#btnJSON").click(function() {
         if (codemirror == undefined) {
 
-            $(this).html('<i class="fa-solid fa-display"></i>');
+            $(this).html('&lt;i class="fa-solid fa-display">&lt;/i>');
             $(this).attr("data-tooltip", "Whiteboard");
             $("#openComponentsDialog").prop("disabled", true);
 
@@ -184,7 +212,7 @@ if (jobID != "0") {
             codemirror.toTextArea();
             codemirror = undefined;
 
-            $(this).html('<i class="fa-solid fa-code"></i>');
+            $(this).html('&lt;i class="fa-solid fa-code">&lt;/i>');
             $(this).attr("data-tooltip", "JSON");
             $("#openComponentsDialog").prop("disabled", false);
         }
@@ -219,7 +247,7 @@ if (jobID != "0") {
 
     $("#zoomNeutral").click(function() {
         var maxSteps = 100;
-        while (editor.zoom != 1 && maxSteps > 0) {
+        while (editor.zoom != 1 &amp;&amp; maxSteps > 0) {
             if (editor.zoom > 1) {
                 editor.zoom_out();
             } else {
@@ -230,13 +258,13 @@ if (jobID != "0") {
     });
 
     $("#zoomIncrement").click(function() {
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i &lt; 10; i++) {
             editor.zoom_in();
         }
     });
 
     $("#zoomDecrement").click(function() {
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i &lt; 10; i++) {
             editor.zoom_out();
         }
     });
@@ -337,7 +365,7 @@ if (jobID != "0") {
         var depth = parseInt($(parentTr).attr("depth")) + 1;
 
         var dataType = $(parentTr).find(".dataType").val();
-        if (dataType == "array" && $(parentTr).next().attr("depth") == depth) {
+        if (dataType == "array" &amp;&amp; $(parentTr).next().attr("depth") == depth) {
             return;
         }
         var html = "";
@@ -376,22 +404,22 @@ if (jobID != "0") {
 
         var left = 14 + 10 * depth;
         var spaces = "";
-        for (var i = 0; i < depth * 10; i++) {
-            spaces += "&nbsp;";
+        for (var i = 0; i &lt; depth * 10; i++) {
+            spaces += "&amp;nbsp;";
         }
-        var html = "<tr depth='"+depth+"'>";
-        html += "<td style='padding-left: "+left+"px;'><input type='text' placeholder='Name' value='"+name+"' class='name' /></td>";
+        var html = "&lt;tr depth='"+depth+"'>";
+        html += "&lt;td style='padding-left: "+left+"px;'>&lt;input type='text' placeholder='Name' value='"+name+"' class='name' />&lt;/td>";
         if (!isEnum) {
-            html += "<td><select class='dataType'>";
+            html += "&lt;td>&lt;select class='dataType'>";
             for (var item of dataTypeDefEnum) {
                 var selected = item == type ? "selected" : "";
-                html += "<option value='"+item+"' "+selected+">"+item+"</option>";
+                html += "&lt;option value='"+item+"' "+selected+">"+item+"&lt;/option>";
             }
-            html += "</select></td>";
+            html += "&lt;/select>&lt;/td>";
             var checked = nullable ? "checked" : "";
-            html += "<td><input type='checkbox' "+checked+" class='nullable' /></td>";
+            html += "&lt;td>&lt;input type='checkbox' "+checked+" class='nullable' />&lt;/td>";
         } else {
-            html += "<td></td><td></td>";
+            html += "&lt;td>&lt;/td>&lt;td>&lt;/td>";
         }
 
         var disabled = "disabled";
@@ -399,8 +427,8 @@ if (jobID != "0") {
             disabled = "";
         }
         
-        html += "<td><button class='secondary btnAddSubFieldDef' "+disabled+"><i class='fa-solid fa-plus'></i></button> <button class='pico-background-red-550 btnDeleteFieldDef'><i class='fa-solid fa-trash'></i></button></td>";
-        html += "</tr>";
+        html += "&lt;td>&lt;button class='secondary btnAddSubFieldDef' "+disabled+">&lt;i class='fa-solid fa-plus'>&lt;/i>&lt;/button> &lt;button class='pico-background-red-550 btnDeleteFieldDef'>&lt;i class='fa-solid fa-trash'>&lt;/i>&lt;/button>&lt;/td>";
+        html += "&lt;/tr>";
 
         return html;
     }
@@ -409,7 +437,7 @@ if (jobID != "0") {
     function setValueAtPath(obj, path, value) {
         let current = obj;
         var dataType;
-        for (let i = 0; i < path.length - 1; i++) {
+        for (let i = 0; i &lt; path.length - 1; i++) {
             const key = path[i];
             current = current[key];
             if (current == undefined) {
@@ -419,7 +447,7 @@ if (jobID != "0") {
             if (dataType == "object") {
                 current = current["children"];
             } else if (dataType == "array") {
-                if (i < path.length - 2) {
+                if (i &lt; path.length - 2) {
                     current = current["item"];
                 }
             } else if (dataType == "enum") {
@@ -452,7 +480,7 @@ if (jobID != "0") {
             var isError = false;
             var fieldPos = [];
 
-            for (var index = 0; index < tableBodyFields.length; index++) {
+            for (var index = 0; index &lt; tableBodyFields.length; index++) {
 
                 var line = $(tableBodyFields[index]);
                 var depth = parseInt($(line).attr("depth"));
@@ -474,7 +502,7 @@ if (jobID != "0") {
                     }
 
                     var times = fieldPos.length - depth - 1;
-                    for (var i = 0; i < times; i++) {
+                    for (var i = 0; i &lt; times; i++) {
                         fieldPos.pop();
                     }
 
@@ -529,7 +557,7 @@ if (jobID != "0") {
 
         console.log(data);
 
-        if (data["out_port_schemas"] != undefined && data["out_port_schemas"][selectedOutPortName] != undefined && data["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
+        if (data["out_port_schemas"] != undefined &amp;&amp; data["out_port_schemas"][selectedOutPortName] != undefined &amp;&amp; data["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
             fields = data["out_port_schemas"][selectedOutPortName]["fields"];
         }
 
@@ -565,7 +593,7 @@ if (jobID != "0") {
                             var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compType+"/full");
                             var outputNameDrawflow;
                             if (compTypeDataFull != false) {
-                                if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["output_port_names"] != undefined) {
+                                if (compTypeDataFull["x-class"] != undefined &amp;&amp; compTypeDataFull["x-class"]["output_port_names"] != undefined) {
                                     for (var i in compTypeDataFull["x-class"]["output_port_names"]) {
                                         if (compTypeDataFull["x-class"]["output_port_names"][i] == outputName) {
                                             outputNameDrawflow = "output_"+(parseInt(i)+1);
@@ -587,7 +615,7 @@ if (jobID != "0") {
                                     var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compTypeInput+"/full");
                                     var inputNameDrawflow;
                                     if (compTypeDataFull != false) {
-                                        if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["input_port_names"] != undefined) {
+                                        if (compTypeDataFull["x-class"] != undefined &amp;&amp; compTypeDataFull["x-class"]["input_port_names"] != undefined) {
                                             for (var i in compTypeDataFull["x-class"]["input_port_names"]) {
                                                 if (compTypeDataFull["x-class"]["input_port_names"][i] == inputName) {
                                                     inputNameDrawflow = "input_"+(parseInt(i)+1);
@@ -675,7 +703,7 @@ if (jobID != "0") {
                                             var compTypeData = await ETL.api.get(serverID, "/configs/"+toCompType+"/full");
                                             if (compTypeData != false) {
                                                 //console.log(compTypeData);
-                                                if (compTypeData["x-class"] != undefined && compTypeData["x-class"]["input_ports"] != undefined) {
+                                                if (compTypeData["x-class"] != undefined &amp;&amp; compTypeData["x-class"]["input_ports"] != undefined) {
                                                     var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
                                                     if (compTypeData["x-class"]["input_ports"][inputPortConnectionNo] != undefined) {
                                                         var inputName = compTypeData["x-class"]["input_ports"][inputPortConnectionNo]["name"];
@@ -720,7 +748,7 @@ if (jobID != "0") {
                                     
                                 }
 
-                                if (typeof component["routes"] == "object" && typeof component["out_port_schemas"] == "object") {
+                                if (typeof component["routes"] == "object" &amp;&amp; typeof component["out_port_schemas"] == "object") {
                                     for (var outputName in component["routes"]) {
                                         if (outputName in component["out_port_schemas"]) {
                                             var fields = component["out_port_schemas"][outputName]["fields"];
@@ -830,7 +858,7 @@ if (jobID != "0") {
 
                     }
 
-                    var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+componentProperties["name"]+"</span>";
+                    var html = "&lt;span class='componentIcon'>&lt;i class='"+icon+"'>&lt;/i>&lt;/span>&lt;br>&lt;span class='componentName'>"+componentProperties["name"]+"&lt;/span>";
 
                     var nodeID = editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
 
@@ -965,7 +993,7 @@ if (jobID != "0") {
         ETL.api.post(serverID, "/jobs/", postData).then(function(data) {
             //console.log(data);
             if (data !== false) {
-                window.location.href="./?serverID="+serverID+"&job="+data;
+                window.location.href="./?serverID="+serverID+"&amp;job="+data;
             }
         });
     });
@@ -989,3 +1017,26 @@ if (jobID != "0") {
 
 }
 
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="ETL.html">ETL</a></li><li><a href="ETL.api.html">api</a></li><li><a href="ETL.console.html">console</a></li><li><a href="ETL.render.html">render</a></li><li><a href="ETL.util.html">util</a></li></ul><h3>Global</h3><ul><li><a href="global.html#darktheme">darktheme</a></li><li><a href="global.html#validatePassword">validatePassword</a></li><li><a href="global.html#validateSqlitefilepath">validateSqlitefilepath</a></li><li><a href="global.html#validateUsername">validateUsername</a></li><li><a href="global.html#validationErrorText">validationErrorText</a></li><li><a href="global.html#validationOk">validationOk</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Sep 27 2025 13:45:16 GMT+0200 (Central European Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

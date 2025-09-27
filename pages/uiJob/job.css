@@ -283,3 +283,6 @@ a {
     margin-top: 7px !important;
     margin-bottom: 7px !important;
 }
+#fieldDefDialog tr td:last-child {
+    text-align: right;
+}

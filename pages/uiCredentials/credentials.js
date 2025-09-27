@@ -1,4 +1,5 @@
 var serverID = $("#serverID").val();
+var credentialID = $("#credentialID").val();
 
 $("#btnCredentialAdd").click(function() {
 
@@ -43,21 +44,24 @@ $("#btnCredentialMappingAdd").click(function() {
 
     data.name = $("#name").val();
     data.environment = "DEV";
-    data["credential_ids"] = {};
+    data["credentials_ids"] = {};
 
     if (credentialDev != "") {
-        data["credential_ids"]["DEV"] = credentialDev;
+        data["credentials_ids"]["DEV"] = credentialDev;
     }
     if (credentialTest != "") {
-        data["credential_ids"]["TEST"] = credentialTest;
+        data["credentials_ids"]["TEST"] = credentialTest;
     }
     if (credentialProd != "") {
-        data["credential_ids"]["PROD"] = credentialProd;
+        data["credentials_ids"]["PROD"] = credentialProd;
     }
 
     console.log(data);
 
     var serverID = $("#newCredentialMappingServerSelection").val();
+
+    /*console.log(JSON.stringify({context: data}));
+    return;*/
 
     ETL.api.post(serverID, "/contexts/credentials-mapping-context", {
         context: data
@@ -110,31 +114,25 @@ for (var serverID in server) {
                     var contextData = await ETL.api.get(serverID, "/contexts/"+contextID);
 
 
-                    //if (contextData !== false) {
+                    if (contextData !== false) {
                         if (context.kind == "credentials") {
                             var contextHost = contextData.host;
                             var contextPort = contextData.port;
                             var contextDatabase = contextData.database;
+                            var contextUser = contextData.user;
+                            var contextPassword = contextData.password;
 
-                            $("#credentialTableBody").append("<tr onclick=\"window.location.href='?credentials&credentialID="+contextID+"'\"><td>"+contextID+"</td><td>"+contextName+"</td><td>"+contextHost+"</td><td>"+contextPort+"</td><td>"+contextDatabase+"</td><td><i class='fa-solid fa-chevron-right'></i></td></tr>");
+                            $("#credentialTableBody").append("<tr serverid='"+serverID+"' contextid='"+contextID+"'><td>"+contextID+"</td><td>"+contextName+"</td><td>"+contextHost+"</td><td>"+contextPort+"</td><td>"+contextDatabase+"</td><td>"+contextUser+"</td><td>"+contextPassword+"</td><td><button class='pico-background-red-550 btnDeleteContext'><i class='fa-solid fa-trash'></i></button></td></tr>");
                         }
 
                         if (context.kind == "context") {
 
                             var checkIcon = "<i class='fa-solid fa-circle-check pico-color-green-500'></i>";
 
-                            $("#credentialMappingTableBody").append("<tr onclick=\"window.location.href='?credentials&credentialID="+contextID+"'\"><td>"+contextID+"</td><td>"+contextName+"</td><td>"+checkIcon+"</td><td>"+checkIcon+"</td><td>"+checkIcon+"</td><td><i class='fa-solid fa-chevron-right'></i></td></tr>");
+                            $("#credentialMappingTableBody").append("<tr serverid='"+serverID+"' contextid='"+contextID+"'><td>"+contextID+"</td><td>"+contextName+"</td><td>"+checkIcon+"</td><td>"+checkIcon+"</td><td>"+checkIcon+"</td><td><button class='pico-background-red-550 btnDeleteContext'><i class='fa-solid fa-trash'></i></button></td></tr>");
                         }
 
-                    //}
-
-                    
-
-                    
-
-                    
-                    
-
+                    }
                 }
             }
         });
@@ -142,4 +140,22 @@ for (var serverID in server) {
 
 }
 
+
+$(document).on("click", ".btnDeleteContext", function() {
+    var parentTr = $(this).closest("tr");
+    var selectedServerID = $(parentTr).attr("serverid");
+    var selectedContextID = $(parentTr).attr("contextid");
+
+    ETL.api.delete(selectedServerID, "/contexts/"+selectedContextID, function(data) {
+        window.location.reload();
+    });
+
+})
+
+
 newCredentialMappingServerSelection();
+
+
+if (credentialID > 0) {
+    ETL.api.get();
+}
