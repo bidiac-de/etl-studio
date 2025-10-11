@@ -284,6 +284,98 @@ if (jobID != "0") {
         });
     }
 
+
+    function deepSet(obj, path, value) {
+        const lastIndex = path.length - 1;
+        const last = path[lastIndex];
+
+        for (let i = 0; i < lastIndex; i++) {
+            const key = path[i];
+
+            if (!obj[key] && i < lastIndex) {
+                obj[key] = {};
+            }
+            obj = obj[path[i]];
+        }
+
+        if (Array.isArray(obj[last])) {
+            obj[last].push(value);
+        } else {
+            obj[last] = value;
+        }
+    }
+
+
+    function getRulesSchema() {
+        /*var ruleExample = {
+            "logical_operator": "OR",
+            "rules": [
+                { "column": "name", "operator": "==", "value": "Alice" },
+                { "column": "name", "operator": "==", "value": "Charlie" }
+            ]
+        }*/
+
+        var rules = {};
+        var pos = [];
+
+        var ruleItemsTr = $("#ruleTable tr");
+        for (var item of ruleItemsTr) {
+            var level = parseInt($(item).attr("level"));
+            var itemType = $(item).attr("class");
+
+            for (var i = 0; i < pos.length - level - 1; i++) {
+                pos.pop();
+            }   
+
+            if (pos[level] == undefined) {
+                pos[level] = 0;
+            } else {
+                pos[level]++;
+            }
+            
+            if (itemType == "logicItem") {
+                var operator = $(item).find("select").val();
+                var ruleItem = {
+                    "logical_operator": operator,
+                    "rules": []
+                };
+                if (level > 0) {
+                    var path = ["rules"];
+                    for (var i = 1; i < level; i++) {
+                        path.push(pos[i]);
+                        path.push("rules");
+                    }
+                    deepSet(rules, path, ruleItem);
+                } else {
+                    rules = ruleItem;
+                }
+            } else if (itemType == "singleItem") {
+                var operator = $(item).find("select").val();
+                var column = $($(item).find("input")[0]).val();
+                var value = $($(item).find("input")[1]).val();
+                var ruleItem = {
+                    "column": column,
+                    "operator": operator,
+                    "value": value
+                };
+                if (level > 0) {
+                    var path = ["rules"];
+                    for (var i = 1; i < level; i++) {
+                        path.push(pos[i]);
+                        path.push("rules");
+                    }
+                    deepSet(rules, path, ruleItem);
+                } else {
+                    rules = ruleItem;
+                }
+            }
+
+        }
+
+        return rules;
+    }
+
+
     $("#btnSaveComponent").click(btnSaveComponent);
 
     function btnSaveComponent() {
@@ -295,6 +387,10 @@ if (jobID != "0") {
             for (var key in newData) {
                 var value = newData[key];
                 updateData[key] = value;
+            }
+            var rules = getRulesSchema();
+            if (Object.keys(rules).length > 0) {
+                updateData["rule"] = rules;
             }
             editor.updateNodeDataFromId(selectedComponentID, updateData);
             $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
@@ -659,10 +755,24 @@ if (jobID != "0") {
                                         "y_coordinate": drawFlowComponent.pos_y
                                     }
                                     component["routes"] = {};
-                                    component["routes"]["out"] = [];
+                                    //component["routes"]["out"] = [];
 
                                     var outputs = drawFlowComponent.outputs;
                                     for (var outputName in outputs) {
+                                        var fromCompType = component["comp_type"];
+                                        var compTypeDataFrom = await ETL.api.get(serverID, "/configs/"+fromCompType+"/full");
+                                        var realOutputName = "out";
+                                        if (compTypeDataFrom != false) {
+                                            if (compTypeDataFrom["x-class"] != undefined && compTypeDataFrom["x-class"]["output_port_names"] != undefined) {
+                                                var outputPortIndex = parseInt(outputName.split("_")[1]) - 1;
+                                                if (compTypeDataFrom["x-class"]["output_port_names"][outputPortIndex] != undefined) {
+                                                    realOutputName = compTypeDataFrom["x-class"]["output_port_names"][outputPortIndex];
+                                                }
+                                            }
+                                        }
+                                        component["routes"][realOutputName] = [];
+
+                                        
                                         var output = outputs[outputName];
                                         var connections = output.connections;
                                         for (var connectionNo in connections) {
@@ -679,7 +789,8 @@ if (jobID != "0") {
                                                     var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
                                                     if (compTypeData["x-class"]["input_ports"][inputPortConnectionNo] != undefined) {
                                                         var inputName = compTypeData["x-class"]["input_ports"][inputPortConnectionNo]["name"];
-                                                        component["routes"]["out"].push({
+                                                        component["routes"][realOutputName].push({
+                                                        //component["routes"]["out"].push({
                                                             "to": to,
                                                             "in_port": inputName
                                                         });
@@ -758,13 +869,16 @@ if (jobID != "0") {
 
     function addComponentToWhiteboard(compType, component = {}) {
 
+        console.log("addComponentToWhiteboard");
+        console.log(compType);
+
         return new Promise(function(resolve, reject) {
 
             ETL.api.get(serverID, "/configs/"+compType+"/form").then(function(selectedComponentRaw) {
                 if (selectedComponentRaw !== false) {
 
                     var selectedComponent = ETL.util.deref(selectedComponentRaw);
-                    //console.log(selectedComponent);
+                    console.log(selectedComponent);
 
                     var title = selectedComponent.title;
                     var icon = selectedComponent.icon || "fa-solid fa-question";
@@ -878,6 +992,60 @@ if (jobID != "0") {
         if (allowExecutionMenuHide) {
             $("#executionMenu").hide();
         }
+    });
+
+    var operators = ["==", "!=", ">", "<", ">=", "<=", "contains"];
+    var logicalOperators = ["AND", "OR", "NOT"];
+
+    $(document).on("click", ".btnAddSingleRule", function() {
+        console.log(this);
+        var closestTr = $(this).closest("tr");
+        var subQuantity = $(closestTr).length;
+        var level = 0;
+        if ($(closestTr).length > 0) {
+            level = parseInt($(closestTr).attr("level")) + 1;
+        }
+        var margin = 10 + level * 15;
+        if (subQuantity > 0 || (subQuantity == 0 && $("#ruleTable tr").length == 0)) {
+            var html = "<tr class='singleItem' level='"+level+"'><td style='padding-left: "+margin+"px'><input type='text' placeholder='Coloum'></td><td><select>";
+            for (var item of operators) {
+                html += "<option>"+item+"</option>";
+            }
+            html += "</select></td><td><input type='text' placeholder='Value'></td><td><button class='pico-background-red-550 btnRemoveRule'><i class='fa-solid fa-trash'></i></button></td></tr>";
+            if ($(closestTr).length > 0) {
+                $(html).insertAfter(closestTr);
+            } else {
+                $("#ruleTable").append(html);
+            }
+            
+        }
+        
+    });
+
+    $(document).on("click", ".btnAddLogicalRule", function() {
+        console.log(this);
+        var closestTr = $(this).closest("tr");
+        var level = 0;
+        if ($(closestTr).length > 0) {
+            level = parseInt($(closestTr).attr("level")) + 1;
+        }
+        var margin = 10 + level * 15;
+        if (true) {
+            var html = "<tr class='logicItem' level='"+level+"'><td style='padding-left: "+margin+"px'><select>";
+            for (var item of logicalOperators) {
+                html += "<option>"+item+"</option>";
+            }
+            html += "</select></td><td><button class='secondary btnAddSingleRule' style='margin-right: 10px; width: 100%;'><i class='fa-solid fa-plus'></i> Simple</button></td><td><button class='secondary btnAddLogicalRule' style='width: 100%;'><i class='fa-solid fa-plus'></i> Combined</button></td><td><button class='pico-background-red-550 btnRemoveRule'><i class='fa-solid fa-trash'></i></button></td></tr>";
+            if ($(closestTr).length > 0) {
+                $(html).insertAfter(closestTr);
+            } else {
+                $("#ruleTable").append(html);
+            }
+        }
+    });
+
+    $(document).on("click", ".btnRemoveRule", function() {
+        $(this).closest("tr").remove();
     });
 
     var allowExecutionMenuHide = true;

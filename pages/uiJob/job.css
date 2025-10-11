@@ -286,3 +286,11 @@ a {
 #fieldDefDialog tr td:last-child {
     text-align: right;
 }
+
+#ruleTable td {
+    width: 33%;
+}
+
+#ruleTable {
+    margin-top: 10px;
+}

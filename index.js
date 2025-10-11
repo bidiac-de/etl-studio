@@ -384,6 +384,42 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
     });
 }
 
+ETL.render.propertyRuleToHTML = function(data = {}, level = 0) {
+
+    var operators = ["==", "!=", ">", "<", ">=", "<=", "contains"];
+    var logicalOperators = ["AND", "OR", "NOT"];
+    var margin = 10 + level * 15;
+    var html = "";
+
+    if (data["rules"] != undefined) {
+        // multi
+        var operator = data["logical_operator"];
+        var rules = data["rules"];
+        html += "<tr class='logicItem' level='"+level+"'><td style='padding-left: "+margin+"px'><select>";
+        for (var item of logicalOperators) {
+            var selected = item == operator ? "selected" : "";
+            html += "<option "+selected+">"+item+"</option>";
+        }
+        html += "</select></td><td><button class='secondary btnAddSingleRule' style='margin-right: 10px; width: 100%;'><i class='fa-solid fa-plus'></i> Simple</button></td><td><button class='secondary btnAddLogicalRule' style='width: 100%;'><i class='fa-solid fa-plus'></i> Combined</button></td><td><button class='pico-background-red-550 btnRemoveRule'><i class='fa-solid fa-trash'></i></button></td></tr>";
+        for (var rule of rules) {
+            html += ETL.render.propertyRuleToHTML(rule, level + 1);
+        }
+
+    } else {
+        // single
+        var column = data.column;
+        var operator = data.operator;
+        var value = data.value;
+        html += "<tr class='singleItem' level='"+level+"'><td style='padding-left: "+margin+"px'><input type='text' placeholder='Coloum' value='"+column+"'></td><td><select>";
+        for (var item of operators) {
+            var selected = item == operator ? "selected" : "";
+            html += "<option "+selected+">"+item+"</option>";
+        }
+        html += "</select></td><td><input type='text' placeholder='Value' value='"+value+"'></td><td><button class='pico-background-red-550 btnRemoveRule'><i class='fa-solid fa-trash'></i></button></td></tr>";
+    }
+    return html;
+}
+
 /**
  * Renders HTML form for component editing based on component configuration schema
  * @param {string|number} componentID - The component ID to edit
@@ -418,6 +454,18 @@ ETL.render.componentEdit = function(componentID) {
                                 }
                             }
                             html += "</table>";
+                        } else if (propertyName == "rule") {
+
+                            html += "<label>"+title+"</label>";
+                            html += "<button class='secondary btnAddSingleRule' style='margin-right: 10px;'><i class='fa-solid fa-plus'></i> Simple Rule</button>";
+                            html += "<button class='secondary btnAddLogicalRule'><i class='fa-solid fa-plus'></i> Combined Rule</button>";
+
+                            var ruleTableContent = ETL.render.propertyRuleToHTML(selectedEditComponent.data[propertyName]);
+
+                            html += "<table id='ruleTable'>"+ruleTableContent+"</table>";
+
+
+
                         }
                     }
 
