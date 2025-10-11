@@ -26,7 +26,7 @@ ETL Studio is an intuitive web-based application that enables you to create and 
 
 - **Visual Workflow Editor**: Create ETL processes with an intuitive whiteboard interface
 - **Database Integration**: Support for MySQL, MongoDB and other data sources
-- **File Processing**: Import/export of CSV, JSON and other formats
+- **File Processing**: Support of CSV, JSON and other formats
 - **Real-time Execution**: Monitor your jobs in real-time with integrated console
 - **Server Management**: Manage multiple execution servers centrally
 - **User Management**: Secure login and user administration
@@ -38,22 +38,14 @@ ETL Studio is an intuitive web-based application that enables you to create and 
 - **Zoom & Navigation**: Flexible zoom functions and panning for large workflows
 - **Component Library**: Pre-built components for common ETL operations
 
-### Available Components
-- **Databases**: MySQL, MongoDB
-- **Files**: CSV, JSON
-- **Transformations**: Filter, Merge
-- **Extensible**: Support for custom components
-
 ### Server Management
 - **Multi-Server Support**: Manage multiple execution servers
 - **Connection Validation**: Automatic verification of server connections
-- **Security**: Access key-based authentication
+- **Security**: Access key-based authentication (beta)
 
 ### Job Management
 - **Job Creation**: Easy creation of new ETL jobs
 - **Execution**: Direct execution with live monitoring
-- **Console**: Integrated console for debugging and monitoring
-- **Versioning**: Job versioning and recovery
 
 ## Technology Stack
 
@@ -159,24 +151,11 @@ On first startup, you'll be guided through the setup wizard:
 ```
 etl-studio/
 ├── inc/                       # PHP includes and configuration
-│   ├── config.php            # Main configuration
-│   ├── database.php          # Database connection
-│   ├── includes.php          # Global includes
-│   ├── login.php             # Authentication
-│   ├── server.php            # Server logic
-│   └── setup.php             # Setup wizard
+│   └── .../        
 ├── pages/                     # UI pages
-│   ├── uiDashboard/          # Main dashboard
-│   ├── uiJob/                # Job editor
-│   ├── uiLogin/              # Login page
-│   ├── uiServer/             # Server management
-│   ├── uiSettings/            # Settings
-│   └── uiSetup/              # Setup wizard
+│   └── .../       
 ├── libs/                      # External libraries
-│   ├── pico-main/            # CSS framework
-│   ├── fontawesome-free-*/   # Icon library
-│   ├── flexboxgrid.min.css   # Grid system
-│   └── jquery-3.7.1.min.js   # JavaScript framework
+│   └── .../
 ├── index.php                  # Main entry point
 ├── config.json               # Configuration file
 ├── etl.db                    # SQLite database
@@ -205,15 +184,6 @@ Edit `inc/config.php` for:
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
 
 ---
 
