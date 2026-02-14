@@ -99,49 +99,230 @@ ETL.console.onChangeHandler = function(log) {}
  * @namespace ETL.api
  */
 ETL.api = ETL.api || {};
+ETL.contract = ETL.contract || {};
 
 ETL.api.timeout = 2000;
+ETL.contract.requiredVersion = "core-studio-v1";
+ETL.contract.cache = ETL.contract.cache || {};
+ETL.contract.blocked = false;
+
+ETL.contract.block = function(message) {
+    if (ETL.contract.blocked) {
+        return;
+    }
+    ETL.contract.blocked = true;
+    var html = "";
+    html += "<div id='contractBlocker' style='position: fixed; inset: 0; z-index: 99999; background: rgba(10,10,10,0.94); color: #fff; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;'>";
+    html += "<div style='max-width: 720px;'>";
+    html += "<h2 style='margin-bottom: 1rem;'><i class='fa-solid fa-plug-circle-xmark'></i> Core/Studio Contract Error</h2>";
+    html += "<p style='margin-bottom: 0.8rem;'>"+message+"</p>";
+    html += "<p style='opacity: 0.8;'>Required contract: <code>"+ETL.contract.requiredVersion+"</code></p>";
+    html += "</div></div>";
+    $("body").append(html);
+};
+
+ETL.api._serverHost = function(serverID = 0) {
+    if (typeof server == "undefined" || server[serverID] == undefined) {
+        return false;
+    }
+    return server[serverID].host;
+};
+
+ETL.api._request = function(serverID, endpoint, method, data, showError, rawContract) {
+    return new Promise(function(resolve) {
+        var host = ETL.api._serverHost(serverID);
+        if (host === false) {
+            resolve(false);
+            return;
+        }
+
+        var executeRequest = function() {
+            var ajaxOptions = {
+                url: host + endpoint,
+                method: method,
+                timeout: ETL.api.timeout,
+                success: function(responseData) {
+                    resolve(responseData);
+                },
+                error: function(responseData) {
+                    if (showError) {
+                        ETL.api.onError(responseData);
+                    }
+                    resolve(false);
+                }
+            };
+
+            if (method == "GET") {
+                ajaxOptions.data = data;
+            } else if (method == "POST" || method == "PUT" || method == "PATCH") {
+                ajaxOptions.data = JSON.stringify(data || {});
+                ajaxOptions.contentType = "application/json; charset=utf-8";
+            }
+
+            $.ajax(ajaxOptions);
+        };
+
+        if (rawContract || endpoint.indexOf("/setup/") === 0) {
+            executeRequest();
+            return;
+        }
+
+        ETL.contract.require(serverID).then(function(isReady) {
+            if (!isReady) {
+                resolve(false);
+                return;
+            }
+            executeRequest();
+        });
+    });
+};
+
+ETL.contract._isCapabilitiesPayloadValid = function(payload) {
+    if (payload == null || typeof payload != "object") {
+        return false;
+    }
+    if (!Array.isArray(payload.environments)) {
+        return false;
+    }
+    if (!Array.isArray(payload.rule_operators)) {
+        return false;
+    }
+    if (!Array.isArray(payload.rule_logical_operators)) {
+        return false;
+    }
+    if (!Array.isArray(payload.data_types)) {
+        return false;
+    }
+    if (payload.setup_validation == null || typeof payload.setup_validation != "object") {
+        return false;
+    }
+    return true;
+};
+
+ETL.api.getCapabilities = function(serverID = 0) {
+    return ETL.api._request(
+        serverID,
+        "/setup/capabilities",
+        "GET",
+        {},
+        false,
+        true
+    );
+};
+
+ETL.contract.require = function(serverID = 0) {
+    return new Promise(function(resolve) {
+        var cached = ETL.contract.cache[serverID];
+        if (cached != undefined) {
+            resolve(true);
+            return;
+        }
+
+        ETL.api.getCapabilities(serverID).then(function(capabilities) {
+            if (capabilities === false || capabilities == null || typeof capabilities != "object") {
+                ETL.contract.block("Unable to load core capabilities. Please verify the core server is reachable and upgraded.");
+                resolve(false);
+                return;
+            }
+            if (capabilities.contract_version !== ETL.contract.requiredVersion) {
+                ETL.contract.block("Core contract version mismatch. Core reports '" + String(capabilities.contract_version || "unknown") + "' but studio requires '" + ETL.contract.requiredVersion + "'.");
+                resolve(false);
+                return;
+            }
+            if (!ETL.contract._isCapabilitiesPayloadValid(capabilities)) {
+                ETL.contract.block("Connected core returned an invalid capabilities payload.");
+                resolve(false);
+                return;
+            }
+            ETL.contract.cache[serverID] = capabilities;
+            resolve(true);
+        });
+    });
+};
+
+ETL.contract.get = function(serverID = 0) {
+    return ETL.contract.cache[serverID] || null;
+};
+
+ETL.contract.getEnvironments = function(serverID = 0) {
+    var data = ETL.contract.get(serverID);
+    return data != null && Array.isArray(data.environments) ? data.environments : [];
+};
+
+ETL.contract.getRuleOperators = function(serverID = 0) {
+    var data = ETL.contract.get(serverID);
+    return data != null && Array.isArray(data.rule_operators) ? data.rule_operators : [];
+};
+
+ETL.contract.getRuleLogicalOperators = function(serverID = 0) {
+    var data = ETL.contract.get(serverID);
+    return data != null && Array.isArray(data.rule_logical_operators) ? data.rule_logical_operators : [];
+};
+
+ETL.contract.getDataTypes = function(serverID = 0) {
+    var data = ETL.contract.get(serverID);
+    return data != null && Array.isArray(data.data_types) ? data.data_types : [];
+};
+
+ETL.contract.bootstrap = function() {
+    if (typeof server == "undefined" || server == null) {
+        return Promise.resolve(true);
+    }
+
+    var serverIDs = [];
+    for (var key in server) {
+        serverIDs.push(parseInt(key, 10));
+    }
+    if (serverIDs.length == 0) {
+        return Promise.resolve(true);
+    }
+
+    return Promise.all(serverIDs.map(function(id) {
+        return ETL.contract.require(id);
+    })).then(function(results) {
+        for (var result of results) {
+            if (result !== true) {
+                return false;
+            }
+        }
+        return true;
+    });
+};
 
 /**
  * Handles API error responses and displays user-friendly error messages
  * @param {Object} data - The error response data from the server
- * @param {Object} data.responseJSON - JSON response containing error details
+ * @param {Object} data.responseJSON - JSON response containing error envelope
  * @param {string} data.statusText - HTTP status text
- * @param {Array} data.responseJSON.detail - Array of error detail objects
- * @param {string} data.responseJSON.detail[].msg - Error message
- * @param {Array} data.responseJSON.detail[].loc - Error location array
- * @param {Object} data.responseJSON.detail[].input - Input component information
- * @param {string} data.responseJSON.detail[].input.name - Component name
  */
 ETL.api.onError = function(data) {
     console.log(data);
 
     var title = "Server Error";
-    var htmlErrorMsg = "Unexpected response from server";
+    var htmlErrorMsg = "Unexpected response from server.";
+    var responseJson = data.responseJSON || {};
+    var error = responseJson.error || {};
 
-    if (data.responseJSON != undefined && data.responseJSON.detail != undefined && data.responseJSON.detail.length > 0) {
-        var errorDetail = data.responseJSON.detail[0];
-        var msg = errorDetail.msg || "Unexpected response from server";
-        var loc = errorDetail.loc || [];
-        title = data.statusText || "Server Error";
-
-        htmlErrorMsg = "<br>";
-        if (loc.length > 0) {
-            htmlErrorMsg += "<kbd>Location";
-            for (var item of loc) {
-                htmlErrorMsg += ' <i class="fa-solid fa-chevron-right"></i> ' + item;
-            }
-            htmlErrorMsg += "</kbd><br><br>";
-        }
-
-        if (errorDetail.input != undefined && errorDetail.input.name != undefined) {
-            htmlErrorMsg += "<kbd>Component: "+errorDetail.input.name+"</kbd><br><br>";
-        }
-        
-        htmlErrorMsg += "<kbd>Message: "+msg+"</kbd>";
+    if (typeof error.code == "string") {
+        title = error.code;
+    }
+    if (typeof error.message == "string") {
+        htmlErrorMsg = "<kbd>Message: " + error.message + "</kbd>";
     }
 
-    ETL.util.alert("<i class='fa-solid fa-triangle-exclamation pico-color-red-550'></i> Error: " + title, htmlErrorMsg);
+    if (Array.isArray(error.details) && error.details.length > 0) {
+        htmlErrorMsg += "<br><br><kbd>Details:</kbd><br>";
+        for (var item of error.details) {
+            if (item.msg != undefined) {
+                htmlErrorMsg += "<small>" + item.msg + "</small><br>";
+            }
+        }
+    }
+
+    ETL.util.alert(
+        "<i class='fa-solid fa-triangle-exclamation pico-color-red-550'></i> Error: " + title,
+        htmlErrorMsg
+    );
     
 }
 
@@ -154,28 +335,7 @@ ETL.api.onError = function(data) {
  * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
  */
 ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false) {
-    return new Promise(function(resolve, reject) {
-        if (server[serverID] != undefined) {
-            var url = server[serverID].host+endpoint;
-            $.ajax({
-                url: url,
-                data: data,
-                method: "GET",
-                timeout: ETL.api.timeout,
-                success: function(data) {
-                    resolve(data);
-                },
-                error: function(data) {
-                    if (showError) {
-                        ETL.api.onError(data);
-                    }
-                    resolve(false);
-                }
-            });
-        } else {
-            resolve(false);
-        }
-    });
+    return ETL.api._request(serverID, endpoint, "GET", data, showError, false);
 }
 
 /**
@@ -187,29 +347,7 @@ ETL.api.get = function(serverID = 0, endpoint = "", data = {}, showError = false
  * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
  */
 ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = false) {
-    return new Promise(function(resolve, reject) {
-        if (server[serverID] != undefined) {
-            var url = server[serverID].host+endpoint;
-            $.ajax({
-                url: url,
-                data: JSON.stringify(data),
-                method: "POST",
-                timeout: ETL.api.timeout,
-                contentType: "application/json; charset=utf-8",
-                success: function(data) {
-                    resolve(data);
-                },
-                error: function(data) {
-                    if (showError) {
-                        ETL.api.onError(data);
-                    }
-                    resolve(false);
-                }
-            });
-        } else {
-            resolve(false);
-        }
-    });
+    return ETL.api._request(serverID, endpoint, "POST", data, showError, false);
 }
 
 /**
@@ -221,29 +359,7 @@ ETL.api.post = function(serverID = 0, endpoint = "", data = {}, showError = fals
  * @returns {Promise<Object|boolean>} Promise that resolves to the response data or false on error
  */
 ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false) {
-    return new Promise(function(resolve, reject) {
-        if (server[serverID] != undefined) {
-            var url = server[serverID].host+endpoint;
-            $.ajax({
-                url: url,
-                data: JSON.stringify(data),
-                method: "PUT",
-                timeout: ETL.api.timeout,
-                contentType: "application/json; charset=utf-8",
-                success: function(data) {
-                    resolve(data);
-                },
-                error: function(data) {
-                    if (showError) {
-                        ETL.api.onError(data);
-                    }
-                    resolve(false);
-                }
-            });
-        } else {
-            resolve(false);
-        }
-    });
+    return ETL.api._request(serverID, endpoint, "PUT", data, showError, false);
 }
 
 /**
@@ -254,26 +370,10 @@ ETL.api.put = function(serverID = 0, endpoint = "", data = {}, showError = false
  * @returns {Promise<boolean>} Promise that resolves to true on success or false on error
  */
 ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
-    return new Promise(function(resolve, reject) {
-        if (server[serverID] != undefined) {
-            var url = server[serverID].host+endpoint;
-            $.ajax({
-                url: url,
-                method: "DELETE",
-                timeout: 2000,
-                success: function(data) {
-                    resolve(true);
-                },
-                error: function(data) {
-                    if (showError) {
-                        ETL.api.onError(data);
-                    }
-                    resolve(false);
-                }
-            });
-        } else {
-            resolve(false);
-        }
+    return new Promise(function(resolve) {
+        ETL.api._request(serverID, endpoint, "DELETE", {}, showError, false).then(function(result) {
+            resolve(result !== false);
+        });
     });
 }
 
@@ -386,8 +486,12 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
 
 ETL.render.propertyRuleToHTML = function(data = {}, level = 0) {
 
-    var operators = ["==", "!=", ">", "<", ">=", "<=", "contains"];
-    var logicalOperators = ["AND", "OR", "NOT"];
+    var currentServerID = 0;
+    if (typeof serverID != "undefined") {
+        currentServerID = parseInt(serverID, 10) || 0;
+    }
+    var operators = ETL.contract.getRuleOperators(currentServerID);
+    var logicalOperators = ETL.contract.getRuleLogicalOperators(currentServerID);
     var margin = 10 + level * 15;
     var html = "";
 
@@ -437,63 +541,70 @@ ETL.render.componentEdit = function(componentID) {
             var html = "";
 
             if (data.properties != undefined) {
+                var uiHints = data["x-ui"];
+                if (uiHints == null || typeof uiHints != "object") {
+                    ETL.contract.block("Component form schema is missing required x-ui hints.");
+                    resolve(false);
+                    return;
+                }
+
+                var contextSelectorHint = uiHints["context_selector"] || {};
+                var ruleBuilderHint = uiHints["rule_builder"] || {};
+                var portSchemaHint = uiHints["port_schema_editor"] || {};
+
+                var contextFieldName = contextSelectorHint["field"];
+                var contextSourceEndpoint = contextSelectorHint["source_endpoint"] || "/contexts/";
+                var ruleFieldName = ruleBuilderHint["field"];
+                var portSchemaFields = Array.isArray(portSchemaHint["fields"]) ? portSchemaHint["fields"] : [];
 
                 for (var property of data.properties) {
                     var propertyName = property["name"];
                     var schema = property["schema"];
                     var title = schema["title"] || "";
 
-                    if (schema.type == "object") {
-                        if (propertyName == "out_port_schemas") {
-                            html += "<label>"+title+"</label>";
-                            html += "<table id='tableOutPortSchema'>";
-                            if (data["x-class"] != undefined && data["x-class"]["output_port_names"] != undefined) {
-                                for (var portName of data["x-class"]["output_port_names"]) {
-                                    html += "<tr><td>"+portName+"</td>";
-                                    html += "<td><button class='btnAddOutPortSchema secondary'><i class='fa-solid fa-pencil'></i> Edit schema</button></td></tr>";
-                                }
-                            }
-                            html += "</table>";
-                        } else if (propertyName == "rule") {
-
-                            html += "<label>"+title+"</label>";
-                            html += "<button class='secondary btnAddSingleRule' style='margin-right: 10px;'><i class='fa-solid fa-plus'></i> Simple Rule</button>";
-                            html += "<button class='secondary btnAddLogicalRule'><i class='fa-solid fa-plus'></i> Combined Rule</button>";
-
-                            var ruleTableContent = ETL.render.propertyRuleToHTML(selectedEditComponent.data[propertyName]);
-
-                            html += "<table id='ruleTable'>"+ruleTableContent+"</table>";
-
-
-
-                        }
-                    }
-
-                    if (propertyName == "context_id") {
-                        var title = schema["title"] || "";
+                    if (propertyName == contextFieldName) {
                         html += "<label>"+title+"<br><select class='formInput' name='"+propertyName+"' aria-label='"+title+"'><option value=''></option>";
-
-                        var contextList = await ETL.api.get(serverID, "/contexts/");
+                        var contextList = await ETL.api.get(serverID, contextSourceEndpoint);
                         if (contextList !== false) {
                             for (var context of contextList) {
-
                                 var contextID = context.id;
                                 var contextName = context.name;
-
                                 if (context.kind == "context") {
                                     var selected = selectedEditComponent.data[propertyName] == contextID ? "selected" : "";
-
                                     html += "<option value='"+contextID+"' "+selected+">"+contextID + " - " + contextName+"</option>";
-
-
                                 }
                             }
                         }
-
-                        
                         html += "</select></label>";
+                        continue;
+                    }
 
+                    if (propertyName == ruleFieldName) {
+                        html += "<label>"+title+"</label>";
+                        html += "<button class='secondary btnAddSingleRule' style='margin-right: 10px;'><i class='fa-solid fa-plus'></i> Simple Rule</button>";
+                        html += "<button class='secondary btnAddLogicalRule'><i class='fa-solid fa-plus'></i> Combined Rule</button>";
+                        var ruleTableContent = ETL.render.propertyRuleToHTML(selectedEditComponent.data[propertyName]);
+                        html += "<table id='ruleTable'>"+ruleTableContent+"</table>";
+                        continue;
+                    }
 
+                    if (portSchemaFields.indexOf(propertyName) >= 0) {
+                        var portNames = [];
+                        var classMeta = data["x-class"] || {};
+                        if (propertyName.indexOf("out_port_") === 0 && Array.isArray(classMeta["output_port_names"])) {
+                            portNames = classMeta["output_port_names"];
+                        } else if (propertyName.indexOf("in_port_") === 0 && Array.isArray(classMeta["input_port_names"])) {
+                            portNames = classMeta["input_port_names"];
+                        }
+
+                        html += "<label>"+title+"</label>";
+                        html += "<table class='tablePortSchema' data-schema-field='"+propertyName+"'>";
+                        for (var portName of portNames) {
+                            html += "<tr><td>"+portName+"</td>";
+                            html += "<td><button class='btnEditPortSchema secondary' data-schema-field='"+propertyName+"' data-port-name='"+portName+"'><i class='fa-solid fa-pencil'></i> Edit schema</button></td></tr>";
+                        }
+                        html += "</table>";
+                        continue;
                     }
 
                     html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
@@ -625,4 +736,8 @@ ETL.util.getFormData = function(element) {
 // Export for Node.js/CommonJS
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ETL;
+}
+
+if (typeof window !== "undefined" && (typeof module === "undefined" || !module.exports)) {
+    ETL.contract.bootstrap();
 }

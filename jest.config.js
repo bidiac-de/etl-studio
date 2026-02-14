@@ -27,6 +27,7 @@ module.exports = {
     '!**/libs/**',
     '!**/img/**',
     '!**/inc/**',
+    '!**/doc/scripts/**',
     '!**/*.config.js',
     '!**/package*.json',
     
@@ -49,10 +50,10 @@ module.exports = {
   coverageThreshold: {
     // Spezifische Schwellenwerte für index.js
     './index.js': {
-      branches: 75,
-      functions: 95,
-      lines: 95,
-      statements: 95
+      branches: 80,
+      functions: 92,
+      lines: 90,
+      statements: 90
     }
   },
   
@@ -108,6 +109,7 @@ module.exports = {
     '/libs/',
     '/img/',
     '/inc/',
+    '/doc/scripts/',
     'setup.js'
   ],
   

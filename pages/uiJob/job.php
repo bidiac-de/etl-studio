@@ -212,11 +212,7 @@
         </div>
 
 
-        <div id="executionMenu">
-            <div class="btnExecutionMenu" environment="DEV"><i class="fa-solid fa-bug"></i> Development</div>
-            <div class="btnExecutionMenu" environment="TEST"><i class="fa-solid fa-flask-vial"></i> Test</div>
-            <div class="btnExecutionMenu" environment="PROD"><i class="fa-solid fa-shield"></i> Production</div>
-        </div>
+        <div id="executionMenu"></div>
 
 
         <?php

@@ -2,6 +2,20 @@
 const ETL = require('../index.js');
 
 describe('ETL.render', () => {
+  beforeEach(() => {
+    ETL.contract.cache = {
+      0: {
+        contract_version: 'core-studio-v1',
+        environments: [],
+        rule_operators: ['equals_only'],
+        rule_logical_operators: ['XOR'],
+        data_types: ['string'],
+        setup_validation: { mode: 'none', required: false, endpoint: '/setup/validate', key_env_var: 'ETL_SETUP_ACCESS_KEY' }
+      }
+    };
+    global.serverID = 0;
+  });
+
   describe('propertyToHTML', () => {
     test('should render string input field', () => {
       const property = {
@@ -110,33 +124,18 @@ describe('ETL.render', () => {
       expect(result).toContain("<option  value='pending'>pending</option>");
     });
 
-    test('should handle object type with out_port_schemas', () => {
+    test('should return empty markup for unsupported object field', () => {
       const property = {
         name: 'out_port_schemas',
         required: false,
         schema: {
           type: 'object',
-          title: 'Output Port Schemas',
-          additionalProperties: {
-            properties: [{
-              schema: {
-                items: {
-                  properties: {
-                    name: { schema: { title: 'Name', type: 'string' } },
-                    type: { schema: { title: 'Type', type: 'select', enum: ['string', 'number'] } }
-                  }
-                }
-              }
-            }]
-          }
+          title: 'Output Port Schemas'
         }
       };
 
       const result = ETL.render.propertyToHTML(property);
-      
-      expect(result).toContain('Output Port Schemas');
-      expect(result).toContain("<table id='tableOutPortSchema'>");
-      expect(result).toContain("<button class='btnAddOutPortSchema secondary'>");
+      expect(result).toBe('');
     });
 
     test('should use provided default value instead of schema default', () => {
@@ -299,6 +298,11 @@ describe('ETL.render', () => {
 
     test('should render component edit form', async () => {
       const mockFormData = {
+        'x-ui': {
+          context_selector: { field: null, source_endpoint: '/contexts/', widget: 'context-select' },
+          rule_builder: { field: null, widget: 'rule-builder' },
+          port_schema_editor: { fields: [], widget: 'port-schema-editor' }
+        },
         properties: [
           {
             name: 'prop1',
@@ -326,6 +330,35 @@ describe('ETL.render', () => {
       const result = await ETL.render.componentEdit('comp123');
 
       expect(result).toBe(false);
+    });
+
+    test('should return false when x-ui hints are missing', async () => {
+      ETL.contract.block = jest.fn();
+      ETL.api.get.mockResolvedValue({ properties: [] });
+
+      const result = await ETL.render.componentEdit('comp123');
+
+      expect(result).toBe(false);
+      expect(ETL.contract.block).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('propertyRuleToHTML', () => {
+    test('should use operators from capabilities', () => {
+      const html = ETL.render.propertyRuleToHTML({
+        column: 'name',
+        operator: 'equals_only',
+        value: 'x'
+      });
+      expect(html).toContain('equals_only');
+    });
+
+    test('should use logical operators from capabilities', () => {
+      const html = ETL.render.propertyRuleToHTML({
+        logical_operator: 'XOR',
+        rules: []
+      });
+      expect(html).toContain('XOR');
     });
   });
 });

@@ -1,5 +1,8 @@
 var jobID = $("#jobID").val();
-var serverID = $("#serverID").val();
+var serverID = parseInt($("#serverID").val(), 10);
+if (isNaN(serverID)) {
+    serverID = 0;
+}
 
 var componentsTemplate = {};
 var components = {};
@@ -10,6 +13,10 @@ var codemirror;
 
 
 if (jobID != "0") {
+    ETL.contract.require(serverID).then(function(contractReady) {
+    if (!contractReady) {
+        return;
+    }
 
     /**
      * Handles console log changes by updating the console text area and scrolling to bottom
@@ -36,6 +43,20 @@ if (jobID != "0") {
         $("#consoleText").scrollTop($("#consoleText")[0].scrollHeight);
     });
 
+    function renderExecutionMenu() {
+        var environments = ETL.contract.getEnvironments(serverID);
+        var html = "";
+        for (var environmentInfo of environments) {
+            var value = environmentInfo.value || "";
+            var label = environmentInfo.label || value;
+            var icon = environmentInfo.icon || "fa-solid fa-play";
+            html += "<div class='btnExecutionMenu' environment='"+value+"'><i class='"+icon+"'></i>"+label+"</div>";
+        }
+        $("#executionMenu").html(html);
+    }
+
+    renderExecutionMenu();
+
     $("#btnExecuteScript").click(function(event) {
 
         allowExecutionMenuHide = false;
@@ -60,7 +81,7 @@ if (jobID != "0") {
 
     });
 
-    $(".btnExecutionMenu").click(function() {
+    $(document).on("click", ".btnExecutionMenu", function() {
         var environment = $(this).attr("environment");
         $("#executionMenu").hide();
 
@@ -408,11 +429,12 @@ if (jobID != "0") {
         }
     });
 
-    $(document).on("click", ".btnAddOutPortSchema", function() {
+    $(document).on("click", ".btnEditPortSchema", function() {
         if (contextMenuSelectedComponent != undefined) {
-            selectedOutPortName = $(this).parent().parent().children().first().html();
+            var selectedPortNameValue = $(this).attr("data-port-name");
+            var selectedSchemaField = $(this).attr("data-schema-field");
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
-            openFieldDialog(selectedComponentID, selectedOutPortName);
+            openFieldDialog(selectedComponentID, selectedSchemaField, selectedPortNameValue);
         }
     });
 
@@ -459,16 +481,7 @@ if (jobID != "0") {
 
 
     function createFieldDefElement(depth = 0, name = "", type = "", nullable = false, isEnum = false) {
-        dataTypeDefEnum = [
-            "string",
-            "integer",
-            "float",
-            "boolean",
-            "object",
-            "array",
-            "enum",
-            "path"
-        ];
+        var dataTypeDefEnum = ETL.contract.getDataTypes(serverID);
 
         var left = 14 + 10 * depth;
         var spaces = "";
@@ -600,13 +613,16 @@ if (jobID != "0") {
                 return;
             }
 
-            if (typeof updateData["out_port_schemas"] == "object") {
-                if (typeof updateData["out_port_schemas"][selectedOutPortName] != "object") {
-                    updateData["out_port_schemas"][selectedOutPortName] = {
-                        fields: []
-                    }
+            if (typeof selectedPortSchemaField == "string" && selectedPortSchemaField != "") {
+                if (typeof updateData[selectedPortSchemaField] != "object" || updateData[selectedPortSchemaField] == null) {
+                    updateData[selectedPortSchemaField] = {};
                 }
-                updateData["out_port_schemas"][selectedOutPortName]["fields"] = fields;
+                if (typeof updateData[selectedPortSchemaField][selectedPortName] != "object") {
+                    updateData[selectedPortSchemaField][selectedPortName] = {
+                        fields: []
+                    };
+                }
+                updateData[selectedPortSchemaField][selectedPortName]["fields"] = fields;
             }
             
             editor.updateNodeDataFromId(selectedComponentID, updateData);
@@ -617,16 +633,23 @@ if (jobID != "0") {
     });
 
 
-    function openFieldDialog(selectedComponentID, selectedOutPortName) {
+    function openFieldDialog(selectedComponentID, selectedSchemaField, selectedPortNameValue) {
         
         var selectedNode = editor.getNodeFromId(selectedComponentID);
         var data = selectedNode.data;
         var fields = [];
+        selectedPortSchemaField = selectedSchemaField;
+        selectedPortName = selectedPortNameValue;
 
         console.log(data);
 
-        if (data["out_port_schemas"] != undefined && data["out_port_schemas"][selectedOutPortName] != undefined && data["out_port_schemas"][selectedOutPortName]["fields"] != undefined) {
-            fields = data["out_port_schemas"][selectedOutPortName]["fields"];
+        if (
+            selectedSchemaField != undefined &&
+            data[selectedSchemaField] != undefined &&
+            data[selectedSchemaField][selectedPortNameValue] != undefined &&
+            data[selectedSchemaField][selectedPortNameValue]["fields"] != undefined
+        ) {
+            fields = data[selectedSchemaField][selectedPortNameValue]["fields"];
         }
 
         $("#tableBodyFields").html("");
@@ -994,9 +1017,6 @@ if (jobID != "0") {
         }
     });
 
-    var operators = ["==", "!=", ">", "<", ">=", "<=", "contains"];
-    var logicalOperators = ["AND", "OR", "NOT"];
-
     $(document).on("click", ".btnAddSingleRule", function() {
         console.log(this);
         var closestTr = $(this).closest("tr");
@@ -1008,6 +1028,7 @@ if (jobID != "0") {
         var margin = 10 + level * 15;
         if (subQuantity > 0 || (subQuantity == 0 && $("#ruleTable tr").length == 0)) {
             var html = "<tr class='singleItem' level='"+level+"'><td style='padding-left: "+margin+"px'><input type='text' placeholder='Coloum'></td><td><select>";
+            var operators = ETL.contract.getRuleOperators(serverID);
             for (var item of operators) {
                 html += "<option>"+item+"</option>";
             }
@@ -1032,6 +1053,7 @@ if (jobID != "0") {
         var margin = 10 + level * 15;
         if (true) {
             var html = "<tr class='logicItem' level='"+level+"'><td style='padding-left: "+margin+"px'><select>";
+            var logicalOperators = ETL.contract.getRuleLogicalOperators(serverID);
             for (var item of logicalOperators) {
                 html += "<option>"+item+"</option>";
             }
@@ -1053,7 +1075,8 @@ if (jobID != "0") {
     var editor = new Drawflow(drawflow);
     var contextMenuSelectedConnection;
     var contextMenuSelectedComponent;
-    var selectedOutPortName;
+    var selectedPortSchemaField;
+    var selectedPortName;
 
     editor.editor_mode = "edit";
     editor.zoom_value = 0.01;
@@ -1122,6 +1145,8 @@ if (jobID != "0") {
 
     loadJob();
 
+    });
+
 
 } else {
 
@@ -1156,4 +1181,3 @@ if (jobID != "0") {
 
 
 }
-

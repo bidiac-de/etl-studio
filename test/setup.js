@@ -22,6 +22,8 @@ const mockJQuery = jest.fn((selector) => {
     prop: jest.fn(),
     val: jest.fn(),
     html: jest.fn(),
+    append: jest.fn(),
+    length: 1,
     find: jest.fn((subSelector) => {
       if (subSelector === 'h2' || subSelector === 'p') {
         return mockElement;
@@ -33,7 +35,9 @@ const mockJQuery = jest.fn((selector) => {
         }),
         attr: jest.fn(),
         prop: jest.fn(),
-        val: jest.fn()
+        val: jest.fn(),
+        html: jest.fn(),
+        length: 0
       };
     })
   };

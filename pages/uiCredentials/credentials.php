@@ -56,12 +56,9 @@
         <hr>
         <table class="striped" id="credentialMappingTable">
             <thead>
-                <tr>
+                <tr id="credentialMappingTableHeadRow">
                     <th class="tableFit"><i class="fa-solid fa-fingerprint"></i> ID</th>
                     <th><i class="fa-solid fa-signature"></i> Name</th>
-                    <th><i class="fa-solid fa-key"></i> DEV</th>
-                    <th><i class="fa-solid fa-key"></i> TEST</th>
-                    <th><i class="fa-solid fa-key"></i> PROD</th>
                     <th class="tableFit"></th>
                 </tr>
             </thead>
@@ -130,32 +127,7 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn">
-                        Credential ID Development
-                    </div>
-                    <div class="col-sm-8 col-xs-12">
-                        <select id="credentialDev" name="credentialDev" aria-label="Environment" required></select>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn">
-                        Credential ID Test
-                    </div>
-                    <div class="col-sm-8 col-xs-12">
-                        <select id="credentialTest" name="credentialTest" aria-label="Environment" required></select>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-4 col-xs-12 labelColumn">
-                        Credential ID Production
-                    </div>
-                    <div class="col-sm-8 col-xs-12">
-                        <select id="credentialProd" name="credentialProd" aria-label="Environment" required></select>
-                    </div>
-                </div>
+                <div id="credentialMappingEnvironmentFields"></div>
 
             </form>
 
