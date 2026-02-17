@@ -1,6 +1,7 @@
 <?php
-    $credentialID = intval(isset($_GET["credentialID"]) ? $_GET["credentialID"] : 0);
+    $credentialID = isset($_GET["credentialID"]) ? trim((string)$_GET["credentialID"]) : "0";
     $contextType = isset($_GET["contextType"]) ? $_GET["contextType"] : "";
+    $isEditMode = $credentialID !== "" && $credentialID !== "0";
 ?>
 
 <link rel="stylesheet" href="pages/uiCredentials/credentials.css">
@@ -73,7 +74,7 @@
     <article>
         <header>
             <div style="float: left;">
-                <h2><i class="fa-solid fa-key"></i> <?=$credentialID>0?"Show":"Add new"?> credential <?=$contextType == "mapping"? "mapping": ""?></h2>
+                <h2><i class="fa-solid fa-key"></i> <?=$isEditMode?"Show":"Add new"?> credential <?=$contextType == "mapping"? "mapping": ""?></h2>
             </div>
             <div style="text-align: right;">
                 <button class="secondary" onclick="window.location.href='?credentials'"><i class="fa-solid fa-xmark"></i></button>
@@ -147,7 +148,7 @@
 
             <div style="float: right;">
                 <?php
-                if ($credentialID > 0) {
+                if ($isEditMode) {
                 ?>
                 <button class="secondary" id="btnCredentialMappingDelete" onclick="window.location.href='?credentials&delete&credentialID='+<?=$credentialID?>"><i class="fa-solid fa-trash"></i> Delete</button>
                 <?php
@@ -281,7 +282,7 @@
 
             <div style="float: right;">
                 <?php
-                if ($credentialID > 0) {
+                if ($isEditMode) {
                 ?>
                 <button class="secondary" id="btnCredentialDelete" onclick="window.location.href='?credentials&delete&credentialID='+<?=$credentialID?>"><i class="fa-solid fa-trash"></i> Delete</button>
                 <?php
