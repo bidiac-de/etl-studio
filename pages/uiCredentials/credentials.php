@@ -39,7 +39,7 @@
                 <th>Port</th>
                 <th>Database</th>
                 <th>User</th>
-                <th>Password</th>
+                <th>Password Set</th>
                 <th class="tableFit"></th>
             </tr>
         </thead>
@@ -49,9 +49,9 @@
     <br><br><br>
 
     <div>
-        <h3 style="margin-right: 25px; float: left;"><i class="fa-solid fa-code-merge"></i> Credentials Mapping</h3>
+        <h3 style="margin-right: 25px; float: left;"><i class="fa-solid fa-code-merge"></i> Connections Mapping</h3>
         <button style="cursor: pointer;" onclick="window.location.href='?credentials&credentialID=0&contextType=mapping'">
-            <i class="fa-solid fa-plus"></i> Add new mapping
+            <i class="fa-solid fa-plus"></i> Add new connection mapping
         </button>
         <hr>
         <table class="striped" id="credentialMappingTable">
@@ -128,6 +128,18 @@
                 </div>
 
                 <div id="credentialMappingEnvironmentFields"></div>
+
+                <div class="row" style="margin-top: 1rem;">
+                    <div class="col-sm-4 col-xs-12 labelColumn">
+                        Add Custom Environment
+                    </div>
+                    <div class="col-sm-8 col-xs-12" style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="customEnvironmentInput" placeholder="e.g. STAGING" style="flex: 1;">
+                        <button type="button" class="secondary" id="btnAddCustomEnvironment" style="white-space: nowrap;">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
 
             </form>
 

@@ -1,190 +1,108 @@
 # ETL Studio
 
-> **A modern, user-friendly web application for creating and managing ETL processes (Extract, Transform, Load)**
+ETL Studio is the web UI for designing, saving, and executing ETL jobs against ETL Core.
 
-[![PHP](https://img.shields.io/badge/PHP-8.0+-blue.svg)](https://php.net/)
-[![SQLite](https://img.shields.io/badge/SQLite-3-green.svg)](https://sqlite.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+## Scope
 
-## Table of Contents
+- Repository: `/Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio`
+- Core repository: `/Users/conradhofstede/Projects/UNI/SEP/ETL/etl-core`
 
-- [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [License](#license)
+These are separate repositories with a strict runtime contract.
 
-## Overview
+## Current Core Integration Model
 
-ETL Studio is an intuitive web-based application that enables you to create and manage complex data processing workflows visually. With a user-friendly drag-and-drop interface, you can easily compose ETL processes without complex programming.
+Studio requires Core contract bootstrap before feature usage.
 
-### Key Features
+### Required bootstrap endpoints
 
-- **Visual Workflow Editor**: Create ETL processes with an intuitive whiteboard interface
-- **Database Integration**: Support for MySQL, MongoDB and other data sources
-- **File Processing**: Support of CSV, JSON and other formats
-- **Real-time Execution**: Monitor your jobs in real-time with integrated console
-- **Server Management**: Manage multiple execution servers centrally
-- **User Management**: Secure login and user administration
+- `GET /setup/capabilities`
+- `POST /setup/validate`
 
-## Features
+### Required schema endpoints
 
-### Visual Job Editor
-- **Whiteboard Interface**: Drag-and-drop components for intuitive workflow creation
-- **Zoom & Navigation**: Flexible zoom functions and panning for large workflows
-- **Component Library**: Pre-built components for common ETL operations
+- `GET /configs/component_types`
+- `GET /configs/{comp_type}/form`
+- `GET /configs/{comp_type}/full`
 
-### Server Management
-- **Multi-Server Support**: Manage multiple execution servers
-- **Connection Validation**: Automatic verification of server connections
-- **Security**: Access key-based authentication (beta)
+### Strict behavior
 
-### Job Management
-- **Job Creation**: Easy creation of new ETL jobs
-- **Execution**: Direct execution with live monitoring
+- Studio validates `contract_version` from capabilities.
+- On missing/invalid/mismatched capabilities, Studio blocks the UI.
+- No legacy fallback paths are used.
+- Environments, operators, logical operators, and data types are read from capabilities (not hardcoded).
+- Component forms are generated from Core schema metadata (`x-ui`, `x-class`).
 
-## Technology Stack
+Compatibility matrix: `doc/studio-core-compatibility.md`.
 
-### Backend
-- **PHP 8.0+**: Server-side logic
-- **SQLite**: Local database for configuration and metadata
-- **Session Management**: Secure user sessions
+## Setup (macOS)
 
-### Frontend
-- **HTML5/CSS3**: Modern web standards
-- **JavaScript (ES6+)**: Interactive user interface
-- **jQuery 3.7.1**: DOM manipulation and AJAX
-- **Pico CSS**: Minimalist CSS framework
-- **Font Awesome 7.0**: Icon library
-- **Devicon**: Icon library
-- **Tabler icons**: Icon library
-- **Flexbox Grid**: Responsive layout system
-- **Codemirror**: Json Editor
-- **Drawflow**: Whiteboard
-
-### Architecture
-- **MVC Pattern**: Clean separation of logic and presentation
-- **Modular Structure**: Reusable components
-- **RESTful Design**: API-like URL structure
-
-## Installation
-
-### Prerequisites
-- PHP 8.0 or higher
-- Web server (Apache, Nginx, or PHP Built-in Server)
-- SQLite support
-- Write permissions for the project directory
-
-### Step-by-Step Installation
-
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/your-username/etl-studio.git
-   cd etl-studio
-   ```
-
-2. **Configure Web Server**
-   - Apache: Ensure `mod_rewrite` is enabled
-   - Nginx: Configure URL rewriting
-   - PHP Built-in Server: `php -S localhost:8000`
-
-3. **Set Permissions**
-   ```bash
-   chmod 755 etl-studio/
-   chmod 644 etl-studio/etl.db
-   ```
-
-4. **Initial Configuration**
-   - Open `http://localhost/etl-studio` in your browser
-   - Follow the setup wizard
-
-## Getting Started
-
-### 1. Setup Wizard
-On first startup, you'll be guided through the setup wizard:
-
-1. **Configure Database**
-   - Set SQLite database path
-   - **Security**: Use a path that is not publicly accessible
-
-2. **Create Admin Account**
-   - Set username and password
-   - Password confirmation
-
-### 2. Create First Job
-1. Log in with your admin credentials
-2. Click "Add component" → "Create new job"
-3. Enter a job name
-4. Start with visual workflow design
-
-### 3. Add Server (Optional)
-1. Navigate to "Server" in the main menu
-2. Click "Add new server"
-3. Configure connection parameters
-4. Test the connection
-
-## Usage
-
-### Job Creation
-1. **Create New Job**: Dashboard → "Create new job"
-2. **Add Components**: "Add component" → Select component
-3. **Connect Workflow**: Connect components via drag-and-drop
-4. **Save Job**: Automatic saving on changes
-
-### Job Execution
-1. **Open Job**: Select from job list
-2. **Open Console**: Terminal icon for live monitoring
-3. **Start Execution**: Press play button
-4. **Monitor Progress**: Watch console and progress bar
-
-### Server Management
-1. **Add Server**: Server menu → "Add new server"
-2. **Test Connection**: Automatic validation
-3. **Manage Servers**: Edit, delete, monitor status
-
-## Project Structure
-
-```
-etl-studio/
-├── inc/                       # PHP includes and configuration
-│   └── .../        
-├── pages/                     # UI pages
-│   └── .../       
-├── libs/                      # External libraries
-│   └── .../
-├── index.php                  # Main entry point
-├── config.json               # Configuration file
-├── etl.db                    # SQLite database
-└── README.md                 # This file
+```bash
+cd /Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio
+mkdir -p data
+php -S 127.0.0.1:8080
 ```
 
-## Development
+Helper:
 
-### Local Development
+```bash
+cd /Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio
+./scripts/demo/start_studio.sh
 ```
-With XAMPP/WAMP
-Copy project to htdocs directory
+
+Open: [http://127.0.0.1:8080](http://127.0.0.1:8080)
+
+## Setup Wizard: SQLite Path
+
+The setup field `Sqlite filepath` is Studio's internal metadata DB (users/server definitions/UI job metadata).
+
+Recommended path:
+
+```text
+/Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio/data/studio.sqlite3
 ```
 
-### Debugging
-- **Browser Console**: Monitor JavaScript errors
-- **PHP Logs**: Log server-side errors
-- **SQLite Browser**: Inspect database contents
+Helper:
 
-### Advanced Configuration
-Edit `inc/config.php` for:
-- Timezone adjustment
-- Available components
-- Database path
+```bash
+cd /Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio
+./scripts/demo/prepare_setup_db.sh /Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio/data/studio.sqlite3
+```
+
+## Connect Studio to Core
+
+In Studio `Server` page:
+
+- Protocol: `http`
+- Host: `127.0.0.1`
+- Port: `8000`
+- Access key: leave empty unless Core uses `ETL_SETUP_ACCESS_KEY`
+
+## Manual Demo Jobs in Studio
+
+Use the full runbook in Core repo:
+
+- `/Users/conradhofstede/Projects/UNI/SEP/ETL/etl-core/docs/mac_demo_runbook.md`
+
+It contains step-by-step manual Studio setup for:
+
+1. `read_postgresql -> filter -> write_mariadb`
+2. `read_mongodb -> aggregation -> write_postgresql`
+3. `read_excel -> filter -> write_json`
+4. Complex split/merge + multi-write story job
+
+## Development Notes
+
+- `index.js` contains contract bootstrap, API layer, and dynamic rendering utilities.
+- `pages/uiJob/job.js` contains whiteboard editor behavior, port wiring, and import/export mapping.
+- Array/object fields are edited as JSON in generated forms.
+
+## Testing
+
+```bash
+cd /Users/conradhofstede/Projects/UNI/SEP/ETL/etl-studio
+npm test -- --runInBand
+```
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-**ETL Studio** - *Creating modern ETL processes simply and visually*
+MIT. See `LICENSE`.

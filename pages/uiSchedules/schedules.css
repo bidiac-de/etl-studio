@@ -1,0 +1,54 @@
+.scheduleFilters {
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+
+#scheduleTable tbody td {
+    vertical-align: middle;
+}
+
+#scheduleTable .tableFit {
+    width: 0;
+    min-width: fit-content;
+    white-space: nowrap;
+}
+
+.scheduleStatusPill {
+    display: inline-block;
+    border-radius: 1rem;
+    padding: 0.12rem 0.55rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--pico-muted-border-color);
+}
+
+.scheduleStatusPaused {
+    opacity: 0.85;
+}
+
+.scheduleActionRow {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+#scheduleDialog article {
+    min-width: min(940px, 94vw);
+}
+
+#scheduleDialog textarea {
+    font-family: "Fira Code", "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+.triggerEditor {
+    margin-top: 0.5rem;
+}
+
+.triggerEditor legend {
+    margin-bottom: 0.35rem;
+}
+
+.fieldDescription {
+    display: block;
+    margin-top: 0.35rem;
+}

@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="192" failures="0" errors="0" time="0.71">
+  <testsuite name="ETL.render" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:20" time="0.109" tests="62">
+    <testcase classname="ETL.render › normalizeSchema" name="should collapse simple nullable anyOf schema to concrete type" time="0.002">
+    </testcase>
+    <testcase classname="ETL.render › normalizeSchema" name="should infer title from property name when title is missing" time="0">
+    </testcase>
+    <testcase classname="ETL.render › normalizeSchema" name="should fallback title for invalid property name values" time="0">
+    </testcase>
+    <testcase classname="ETL.render › normalizeSchema" name="should convert enum string schema to select type" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › normalizeSchema" name="should keep complex unions unresolved" time="0">
+    </testcase>
+    <testcase classname="ETL.render › normalizeProperties" name="should keep array properties unchanged" time="0">
+    </testcase>
+    <testcase classname="ETL.render › normalizeProperties" name="should convert object-map properties to array entries" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › normalizeProperties" name="should return empty array for null or non-object rootSchema" time="0">
+    </testcase>
+    <testcase classname="ETL.render › normalizeProperties" name="should skip properties with null schema values in object-map" time="0">
+    </testcase>
+    <testcase classname="ETL.render › _simpleNullableUnionBranch" name="should return null when union has two null branches" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › _simpleNullableUnionBranch" name="should return null when union has no null branch" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render textarea when widget is textarea" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render string input field" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render integer input field" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render number input field with step any" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render boolean checkbox field" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render unchecked boolean checkbox when default is false" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render select dropdown field" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render nullable anyOf string as input field" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render nullable number default null as empty number input" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render nullable select default null as empty select" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render object field as JSON textarea" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render array field as JSON textarea" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should use provided default value instead of schema default" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should handle missing title and description" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should handle empty default value" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should render helper text from description" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should fallback to JSON textarea for unresolved complex unions" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should fallback unresolved unions with array default to array json type" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should fallback unresolved unions with object default to object json type" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyToHTML" name="should fallback unresolved nullable unions with null default to empty textarea" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jsonFieldDefault" name="should normalize JSON string input" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jsonFieldDefault" name="should keep invalid JSON string as-is" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jsonFieldDefault" name="should default whitespace-only strings" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jsonFieldDefault" name="should stringify object input" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jsonFieldDefault" name="should fallback for circular values" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jobEdit" name="should render job edit form for new job" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › jobEdit" name="should render job edit form when properties come as object-map" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jobEdit" name="should render job edit form for existing job" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jobEdit" name="should return false when config data is invalid" time="0">
+    </testcase>
+    <testcase classname="ETL.render › jobEdit" name="should return false when job data is false" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render component edit form" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render with explicit runtime options when global editor is unavailable" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when no editor instance is available" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render component edit form when properties come as object-map" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when form data is invalid" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when x-ui hints are missing" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render dynamic context selector options" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should display context description in selector when available" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should not crash when context endpoint response is not an array" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render array and nullable fields used by production component forms" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render recursive rule builder markup" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should include dynamic and schema-derived port names in port schema editor" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should include dynamic input ports in input port schema editor" time="0.004">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return explicit fallback text when schema has no renderable properties" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when getNodeFromId returns null" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when component data has empty comp_type" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should return false when form API returns false" time="0">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should fallback serverID to 0 when NaN" time="0.001">
+    </testcase>
+    <testcase classname="ETL.render › componentEdit" name="should render x-ui sections as fieldsets" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyRuleToHTML" name="should use operators from capabilities" time="0">
+    </testcase>
+    <testcase classname="ETL.render › propertyRuleToHTML" name="should use logical operators from capabilities" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Executions helpers" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.048" tests="15">
+    <testcase classname="Executions helpers" name="normalizeServerId should parse valid integers" time="0.001">
+    </testcase>
+    <testcase classname="Executions helpers" name="normalizeServerId should return 0 for invalid values" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should handle milliseconds" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should handle seconds" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should handle minutes and seconds" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should handle hours" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should return dash for missing start" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should use current time for missing end" time="0.001">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDuration should return dash for negative duration" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="statusBadgeHTML should include status text" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="statusBadgeHTML should include status-specific CSS class" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="statusBadgeHTML should handle unknown statuses gracefully" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDateTime should format valid ISO strings" time="0.029">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDateTime should return dash for empty/null" time="0">
+    </testcase>
+    <testcase classname="Executions helpers" name="formatDateTime should return original string for invalid date" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Schedules helpers" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.023" tests="7">
+    <testcase classname="Schedules helpers" name="should parse empty advanced JSON as empty object" time="0">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should reject non-object advanced JSON payloads" time="0.01">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should merge typed and advanced args with advanced override precedence" time="0">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should split trigger args and preserve unknown keys as advanced args" time="0">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should build valid cron trigger args from typed form values" time="0">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should fail cron trigger creation when no scheduling fields are provided" time="0.001">
+    </testcase>
+    <testcase classname="Schedules helpers" name="should build date trigger args and require run date" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="ETL.util" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.021" tests="30">
+    <testcase classname="ETL.util › resolveLocal" name="should resolve simple reference" time="0">
+    </testcase>
+    <testcase classname="ETL.util › resolveLocal" name="should resolve nested reference" time="0">
+    </testcase>
+    <testcase classname="ETL.util › resolveLocal" name="should return undefined for invalid reference" time="0">
+    </testcase>
+    <testcase classname="ETL.util › deref" name="should handle simple object without references" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › deref" name="should resolve $ref references" time="0">
+    </testcase>
+    <testcase classname="ETL.util › deref" name="should handle circular references" time="0">
+    </testcase>
+    <testcase classname="ETL.util › deref" name="should handle arrays" time="0">
+    </testcase>
+    <testcase classname="ETL.util › deref" name="should handle primitive values" time="0">
+    </testcase>
+    <testcase classname="ETL.util › formatDate" name="should format current date by default" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › formatDate" name="should format given date" time="0">
+    </testcase>
+    <testcase classname="ETL.util › alert" name="should call alert function without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.util › applyComponentEditDialogResult" name="should populate popup and enable save button for valid HTML payload" time="0">
+    </testcase>
+    <testcase classname="ETL.util › applyComponentEditDialogResult" name="should show fallback text and disable save button for false payload" time="0">
+    </testcase>
+    <testcase classname="ETL.util › insertTextAtCursor" name="should return false for invalid target" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › insertTextAtCursor" name="should insert text at current selection and dispatch events" time="0">
+    </testcase>
+    <testcase classname="ETL.util › initContextTemplateAssist" name="should fetch context keys and render helper tokens" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › initContextTemplateAssist" name="should show fallback helper text for empty context and endpoint failures" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should extract text input data" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should extract checkbox data" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should extract number input data" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should parse integer number input when data-number-kind is integer" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should map empty nullable number input to null" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should map invalid nullable number input to null" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should handle multiple inputs" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should parse JSON field values for array/object inputs" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should return false on invalid JSON field values" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should default empty JSON input by configured json type" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should map empty nullable JSON input to null" time="0">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should stop processing remaining fields after JSON parse failure" time="0.001">
+    </testcase>
+    <testcase classname="ETL.util › getFormData" name="should map empty nullable text input to null" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Pages JavaScript Functionality" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.015" tests="18">
+    <testcase classname="Pages JavaScript Functionality › Dashboard Functions" name="should parse numeric values correctly" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Dashboard Functions" name="should parse date strings" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Dashboard Functions" name="should parse DD/MM/YYYY format" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Dashboard Functions" name="should return lowercase string for other values" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Dashboard Functions" name="should handle empty string" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Login Validation Functions" name="should validate login form correctly" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Settings Management Functions" name="should handle theme switching" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Settings Management Functions" name="should handle console buffer size validation" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Server Management Functions" name="should build connection strings correctly" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Server Management Functions" name="should validate server data" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Setup Validation Functions" name="should validate database path" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Setup Validation Functions" name="should validate password confirmation" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Job Management Functions" name="should process job data correctly" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Job Management Functions" name="should process component data" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › User Management Functions" name="should validate user data" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › User Management Functions" name="should format user display data" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Utility Functions" name="should format dates correctly" time="0.001">
+    </testcase>
+    <testcase classname="Pages JavaScript Functionality › Utility Functions" name="should truncate strings correctly" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Pages JavaScript Files" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.015" tests="15">
+    <testcase classname="Pages JavaScript Files › Dashboard Functions" name="should parse numeric values correctly" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Login Validation" name="should validate form fields" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Login Validation" name="should handle form submission logic" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Settings Management" name="should handle theme switching" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Settings Management" name="should handle console buffer size" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Server Management" name="should build connection strings" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Server Management" name="should validate server data" time="0.001">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Setup Validation" name="should validate database path" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Setup Validation" name="should validate password confirmation" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Job Management" name="should handle job data processing" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Job Management" name="should handle component data" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › User Management" name="should handle user data validation" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › User Management" name="should format user display data" time="0.001">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Utility Functions" name="should handle date formatting" time="0">
+    </testcase>
+    <testcase classname="Pages JavaScript Files › Utility Functions" name="should handle string utilities" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="ETL.contract" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.014" tests="18">
+    <testcase classname="ETL.contract" name="block should append blocker only once and set blocked flag" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject non-object payload" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject payload missing environments" time="0.001">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject payload missing rule operators" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject payload missing logical operators" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject payload missing data types" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="capabilities validator should reject payload with invalid setup_validation" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="require should block on false capabilities response" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="require should block on non-object capabilities response" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="require should block on invalid capabilities shape" time="0.001">
+    </testcase>
+    <testcase classname="ETL.contract" name="require should cache valid capabilities and return true" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="getEnvironments and getDataTypes should return empty arrays when cache missing" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="getEnvironments and getDataTypes should return configured arrays when cache exists" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="bootstrap should return true when server is undefined" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="bootstrap should return true when server is null" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="bootstrap should return true when no server ids exist" time="0">
+    </testcase>
+    <testcase classname="ETL.contract" name="bootstrap should return false when one server contract fails" time="0.001">
+    </testcase>
+    <testcase classname="ETL.contract" name="bootstrap should return true when all server contracts succeed" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="ETL.api" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.014" tests="10">
+    <testcase classname="ETL.api › onError" name="should handle canonical error response" time="0.001">
+    </testcase>
+    <testcase classname="ETL.api › onError" name="should handle unknown response shape" time="0">
+    </testcase>
+    <testcase classname="ETL.api › contract bootstrap" name="should fetch capabilities before non-setup request when cache is empty" time="0">
+    </testcase>
+    <testcase classname="ETL.api › contract bootstrap" name="should hard-block and stop request flow on contract mismatch" time="0">
+    </testcase>
+    <testcase classname="ETL.api › GET requests" name="should make successful GET request" time="0">
+    </testcase>
+    <testcase classname="ETL.api › GET requests" name="should handle GET request error" time="0">
+    </testcase>
+    <testcase classname="ETL.api › GET requests" name="should return false for invalid server ID" time="0">
+    </testcase>
+    <testcase classname="ETL.api › POST requests" name="should make successful POST request" time="0">
+    </testcase>
+    <testcase classname="ETL.api › PUT requests" name="should make successful PUT request" time="0.001">
+    </testcase>
+    <testcase classname="ETL.api › DELETE requests" name="should make successful DELETE request" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="ETL.console" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.013" tests="9">
+    <testcase classname="ETL.console › getLocaleDatetime" name="should return formatted datetime string" time="0.001">
+    </testcase>
+    <testcase classname="ETL.console › log" name="should call log function without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.console › log" name="should call log function without timestamp without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.console › log" name="should call log function with existing log without throwing error" time="0.001">
+    </testcase>
+    <testcase classname="ETL.console › log" name="should call log function with large buffer without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.console › get" name="should call get function without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.console › get" name="should return string from get function" time="0">
+    </testcase>
+    <testcase classname="ETL.console › clear" name="should call clear function without throwing error" time="0">
+    </testcase>
+    <testcase classname="ETL.console › fireChangeHandler" name="should call fireChangeHandler function without throwing error" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Browser bootstrap path" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.012" tests="1">
+    <testcase classname="Browser bootstrap path" name="should auto-bootstrap contract when running in browser context" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="User Management Page" errors="0" failures="0" skipped="0" timestamp="2026-02-17T10:42:21" time="0.012" tests="7">
+    <testcase classname="User Management Page › Future User Management Functions" name="should be ready for user management functionality" time="0.001">
+    </testcase>
+    <testcase classname="User Management Page › Future User Management Functions" name="should handle user creation when implemented" time="0">
+    </testcase>
+    <testcase classname="User Management Page › Future User Management Functions" name="should handle user deletion when implemented" time="0">
+    </testcase>
+    <testcase classname="User Management Page › Future User Management Functions" name="should handle user update when implemented" time="0">
+    </testcase>
+    <testcase classname="User Management Page › Future User Management Functions" name="should handle user list retrieval when implemented" time="0">
+    </testcase>
+    <testcase classname="User Management Page › User Management UI Components" name="should handle user table rendering when implemented" time="0.001">
+    </testcase>
+    <testcase classname="User Management Page › User Management UI Components" name="should handle user form validation when implemented" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

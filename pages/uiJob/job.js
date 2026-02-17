@@ -57,6 +57,166 @@ if (jobID != "0") {
 
     renderExecutionMenu();
 
+    var executionLiveState = {
+        executionID: null,
+        environment: null,
+        progressPoll: null,
+        logsPoll: null,
+        progressErrorShown: false,
+        logsErrorShown: false
+    };
+
+    function clearExecutionPolling() {
+        if (executionLiveState.progressPoll != null) {
+            clearInterval(executionLiveState.progressPoll);
+            executionLiveState.progressPoll = null;
+        }
+        if (executionLiveState.logsPoll != null) {
+            clearInterval(executionLiveState.logsPoll);
+            executionLiveState.logsPoll = null;
+        }
+    }
+
+    function isTerminalExecutionStatus(status) {
+        return status == "SUCCESS" || status == "FAILED" || status == "CANCELLED";
+    }
+
+    function setExecutionPanelStatus(status) {
+        var value = status || "UNKNOWN";
+        $("#executionStatusValue").text(value);
+        $("#executionStatusPanel").attr("data-status", value);
+    }
+
+    function renderExecutionComponents(components) {
+        var bodyHtml = "";
+        if (Array.isArray(components) && components.length > 0) {
+            for (var item of components) {
+                var componentName = item.component_name || item.component_id || "-";
+                bodyHtml += "<tr>";
+                bodyHtml += "<td>" + ETL.render.escapeHTML(componentName) + "</td>";
+                bodyHtml += "<td>" + ETL.render.escapeHTML(String(item.status || "-")) + "</td>";
+                bodyHtml += "<td>" + ETL.render.escapeHTML(String(item.rows_received || 0)) + "</td>";
+                bodyHtml += "<td>" + ETL.render.escapeHTML(String(item.rows_forwarded || 0)) + "</td>";
+                bodyHtml += "<td>" + ETL.render.escapeHTML(String(item.error_count || 0)) + "</td>";
+                bodyHtml += "</tr>";
+            }
+        } else {
+            bodyHtml = "<tr><td colspan='5'><small>No component metrics available yet.</small></td></tr>";
+        }
+        $("#executionStatusComponentsBody").html(bodyHtml);
+    }
+
+    function renderExecutionSnapshot(snapshot) {
+        if (snapshot == null || typeof snapshot != "object") {
+            return;
+        }
+        var status = String(snapshot.status || "UNKNOWN");
+        setExecutionPanelStatus(status);
+        if (snapshot.execution_id != undefined) {
+            $("#executionStatusExecutionID").text(String(snapshot.execution_id));
+        }
+        if (snapshot.environment != undefined && snapshot.environment !== null) {
+            $("#executionStatusEnvironment").text(String(snapshot.environment));
+        }
+        $("#executionStatusAttempt").text(String(snapshot.active_attempt || 0));
+        $("#executionStatusRowsReceived").text(String(snapshot.rows_received_total || 0));
+        $("#executionStatusRowsForwarded").text(String(snapshot.rows_forwarded_total || 0));
+        renderExecutionComponents(snapshot.components);
+
+        var lastError = snapshot.last_error;
+        if (typeof lastError == "string" && lastError.trim() != "") {
+            $("#executionStatusError")
+                .html("<strong>Last Error:</strong> " + ETL.render.escapeHTML(lastError))
+                .show();
+        } else {
+            $("#executionStatusError").hide().html("");
+        }
+    }
+
+    function renderExecutionLogs(logPayload) {
+        if (logPayload == null || typeof logPayload != "object") {
+            return;
+        }
+        var lines = Array.isArray(logPayload.lines) ? logPayload.lines : [];
+        var logElement = $("#executionStatusLogs");
+        logElement.text(lines.join("\n"));
+        if (logElement.length > 0) {
+            logElement.scrollTop(logElement[0].scrollHeight);
+        }
+    }
+
+    function pollExecutionProgress() {
+        if (executionLiveState.executionID == null) {
+            return;
+        }
+        ETL.api
+            .get(serverID, "/execution/executions/" + executionLiveState.executionID + "/progress")
+            .then(function(snapshot) {
+                if (snapshot === false) {
+                    if (!executionLiveState.progressErrorShown) {
+                        ETL.util.alert(
+                            "Execution status unavailable",
+                            "Could not load live execution progress right now."
+                        );
+                        executionLiveState.progressErrorShown = true;
+                    }
+                    return;
+                }
+                executionLiveState.progressErrorShown = false;
+                renderExecutionSnapshot(snapshot);
+                if (isTerminalExecutionStatus(String(snapshot.status || ""))) {
+                    clearExecutionPolling();
+                    pollExecutionLogs();
+                }
+            });
+    }
+
+    function pollExecutionLogs() {
+        if (executionLiveState.executionID == null) {
+            return;
+        }
+        ETL.api
+            .get(serverID, "/execution/executions/" + executionLiveState.executionID + "/logs?tail=180")
+            .then(function(logPayload) {
+                if (logPayload === false) {
+                    if (!executionLiveState.logsErrorShown) {
+                        ETL.util.alert(
+                            "Execution logs unavailable",
+                            "Could not load live execution logs right now."
+                        );
+                        executionLiveState.logsErrorShown = true;
+                    }
+                    return;
+                }
+                executionLiveState.logsErrorShown = false;
+                renderExecutionLogs(logPayload);
+            });
+    }
+
+    function startExecutionLiveView(executionID, environment) {
+        clearExecutionPolling();
+        executionLiveState.executionID = executionID;
+        executionLiveState.environment = environment || "-";
+        executionLiveState.progressErrorShown = false;
+        executionLiveState.logsErrorShown = false;
+
+        $("#executionStatusPanel").removeClass("executionPanelHidden");
+        setExecutionPanelStatus("STARTING");
+        $("#executionStatusExecutionID").text(String(executionID || "-"));
+        $("#executionStatusEnvironment").text(String(environment || "-"));
+        $("#executionStatusAttempt").text("0");
+        $("#executionStatusRowsReceived").text("0");
+        $("#executionStatusRowsForwarded").text("0");
+        $("#executionStatusError").hide().html("");
+        $("#executionStatusComponentsBody").html("<tr><td colspan='5'><small>Waiting for execution telemetry...</small></td></tr>");
+        $("#executionStatusLogs").text("");
+
+        pollExecutionProgress();
+        pollExecutionLogs();
+        executionLiveState.progressPoll = setInterval(pollExecutionProgress, 1000);
+        executionLiveState.logsPoll = setInterval(pollExecutionLogs, 2000);
+    }
+
     $("#btnExecuteScript").click(function(event) {
 
         allowExecutionMenuHide = false;
@@ -88,10 +248,18 @@ if (jobID != "0") {
         ETL.api.post(serverID, "/execution/"+jobID, {
             environment: environment
         }, true).then(function(data) {
-            console.log(data);
             if (data !== false) {
-                if (data.status == "started") {
-                    ETL.util.alert("<i class='fa-solid fa-circle-check pico-color-green-550'></i> Job started sucessfully");
+                if (data.status == "started" && data.execution_id != undefined) {
+                    ETL.util.alert(
+                        "<i class='fa-solid fa-circle-check pico-color-green-550'></i> Job started",
+                        "Execution ID: <code>" + ETL.render.escapeHTML(String(data.execution_id)) + "</code>"
+                    );
+                    startExecutionLiveView(String(data.execution_id), environment);
+                } else if (data.status == "started") {
+                    ETL.util.alert(
+                        "<i class='fa-solid fa-circle-check pico-color-green-550'></i> Job started",
+                        "Execution started, but no execution ID was returned."
+                    );
                 }
             }
             
@@ -109,7 +277,7 @@ if (jobID != "0") {
     $("#openComponentsDialog").click(function(event) {
         $("#componentsTable").html("");
         $("#componentDialog").attr("open", "");
-        ETL.api.get(serverID, "/configs/component_types/").then(function(componentTypes) {
+        ETL.api.get(serverID, "/configs/component_types").then(function(componentTypes) {
             if (componentTypes !== false) {
 
                 var promises = [];
@@ -123,9 +291,24 @@ if (jobID != "0") {
                     var componentTable = "";
 
                     for (var componentPromise of data) {
-                        var component = ETL.util.deref(componentPromise.value);
+                        if (componentPromise.status != "fulfilled") {
+                            continue;
+                        }
+                        var componentRaw = componentPromise.value;
+                        if (componentRaw === false || componentRaw == null || typeof componentRaw != "object") {
+                            continue;
+                        }
+
+                        var component = ETL.util.deref(componentRaw);
+                        if (component == null || typeof component != "object") {
+                            continue;
+                        }
+
                         var componentTitle = component.title;
                         var compType = component["comp-type"];
+                        if (typeof compType != "string" || compType == "") {
+                            continue;
+                        }
                         var icon = component["icon"];
 
                         if (typeof icon != "string") {
@@ -133,9 +316,13 @@ if (jobID != "0") {
                         }
 
                         componentsTemplate[compType] = component;
-                        componentTable += "<tr><td><div><i class=\""+icon+"\"></i></div></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button onclick=\"addComponentToWhiteboard('"+compType+"')\"><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
+                        componentTable += "<tr><td><div><i class=\""+icon+"\"></i></div></td><td>"+componentTitle+"</td><td><button class=\"secondary\" disabled><i class=\"fa-solid fa-sliders\"></i> Customize</button> <button class='btnAddComponentToWhiteboard' data-comp-type='"+ETL.render.escapeHTML(compType)+"'><i class=\"fa-solid fa-plus\"></i> Add</button></td></tr>";
 
                         
+                    }
+
+                    if (componentTable == "") {
+                        componentTable = "<tr><td colspan='3'>No components available from core.</td></tr>";
                     }
 
                     $("#componentsTable").html(componentTable);
@@ -219,6 +406,9 @@ if (jobID != "0") {
 
     $("#btnSaveJobSettings").click(function() {
         var postData = ETL.util.getFormData($("#settingsDialogMain"));
+        if (postData === false) {
+            return;
+        }
         //console.log(postData);
 
         ETL.api.get(serverID, "/jobs/"+jobID).then(function(data) {
@@ -290,17 +480,20 @@ if (jobID != "0") {
                 }
                 var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
 
-                ETL.render.componentEdit(selectedComponentID).then(function(result) {
-                    if (result !== false) {
-                        $("#componentEditDialogMain").html(result);
-                        $("#btnSaveComponent").attr("disabled", false);
-                        resolve(true);
-                    } else {
-                        $("#componentEditDialogMain").html("No Server connection!");
-                        $("#btnSaveComponent").attr("disabled", true);
-                        resolve(false);
-                    }
-                });
+                ETL.render
+                    .componentEdit(selectedComponentID, { editor: editor, serverID: serverID })
+                    .then(function(result) {
+                        var applied = ETL.util.applyComponentEditDialogResult(result);
+                        if (applied && ETL.util != undefined && typeof ETL.util.initContextTemplateAssist == "function") {
+                            ETL.util.initContextTemplateAssist($("#componentEditDialogMain"), serverID);
+                        }
+                        resolve(applied);
+                    })
+                    .catch(function() {
+                        resolve(ETL.util.applyComponentEditDialogResult(false));
+                    });
+            } else {
+                resolve(false);
             }
         });
     }
@@ -323,6 +516,106 @@ if (jobID != "0") {
             obj[last].push(value);
         } else {
             obj[last] = value;
+        }
+    }
+
+    var componentSchemaFullCache = {};
+
+    function normalizePortName(portValue) {
+        if (typeof portValue == "string") {
+            return portValue;
+        }
+        if (portValue != null && typeof portValue == "object" && typeof portValue.name == "string") {
+            return portValue.name;
+        }
+        return "";
+    }
+
+    function mergePortNames(basePortNames = [], extraPorts = [], schemaMap = {}) {
+        var names = [];
+        for (var basePortName of basePortNames) {
+            if (typeof basePortName == "string" && basePortName != "") {
+                names.push(basePortName);
+            }
+        }
+        if (Array.isArray(extraPorts)) {
+            for (var extraPort of extraPorts) {
+                var extraPortName = normalizePortName(extraPort);
+                if (extraPortName != "") {
+                    names.push(extraPortName);
+                }
+            }
+        }
+        if (schemaMap != null && typeof schemaMap == "object") {
+            for (var schemaPortName in schemaMap) {
+                names.push(schemaPortName);
+            }
+        }
+        return Array.from(new Set(names));
+    }
+
+    async function getComponentSchemaFull(compType) {
+        if (componentSchemaFullCache[compType] != undefined) {
+            return componentSchemaFullCache[compType];
+        }
+        var schema = await ETL.api.get(serverID, "/configs/" + compType + "/full");
+        if (schema !== false) {
+            schema = ETL.util.deref(schema);
+            componentSchemaFullCache[compType] = schema;
+            return schema;
+        }
+        return false;
+    }
+
+    async function getPortNamesForComponent(compType, componentData, direction = "output") {
+        var schemaFull = await getComponentSchemaFull(compType);
+        if (schemaFull === false) {
+            return [];
+        }
+
+        var classMeta = schemaFull["x-class"] || {};
+        if (direction == "input") {
+            return mergePortNames(
+                classMeta["input_port_names"] || [],
+                componentData["extra_input_ports"] || [],
+                componentData["in_port_schemas"] || {}
+            );
+        }
+        return mergePortNames(
+            classMeta["output_port_names"] || [],
+            componentData["extra_output_ports"] || [],
+            componentData["out_port_schemas"] || {}
+        );
+    }
+
+    async function syncNodePorts(nodeID, compType, componentData) {
+        var expectedInputPorts = await getPortNamesForComponent(compType, componentData, "input");
+        var expectedOutputPorts = await getPortNamesForComponent(compType, componentData, "output");
+
+        var node = editor.getNodeFromId(nodeID);
+        if (node == undefined) {
+            return;
+        }
+
+        var currentInputs = Object.keys(node.inputs || {}).length;
+        var currentOutputs = Object.keys(node.outputs || {}).length;
+
+        while (currentInputs > expectedInputPorts.length) {
+            editor.removeNodeInput(nodeID, "input_" + currentInputs);
+            currentInputs--;
+        }
+        while (currentInputs < expectedInputPorts.length) {
+            editor.addNodeInput(nodeID);
+            currentInputs++;
+        }
+
+        while (currentOutputs > expectedOutputPorts.length) {
+            editor.removeNodeOutput(nodeID, "output_" + currentOutputs);
+            currentOutputs--;
+        }
+        while (currentOutputs < expectedOutputPorts.length) {
+            editor.addNodeOutput(nodeID);
+            currentOutputs++;
         }
     }
 
@@ -399,10 +692,13 @@ if (jobID != "0") {
 
     $("#btnSaveComponent").click(btnSaveComponent);
 
-    function btnSaveComponent() {
+    async function btnSaveComponent() {
         if (contextMenuSelectedComponent != undefined) {
             var selectedComponentID = contextMenuSelectedComponent.split("-")[1];
             var newData = ETL.util.getFormData($("#componentEditDialogMain"));
+            if (newData === false) {
+                return;
+            }
             var selectedNode = editor.getNodeFromId(selectedComponentID);
             var updateData = selectedNode.data;
             for (var key in newData) {
@@ -414,6 +710,7 @@ if (jobID != "0") {
                 updateData["rule"] = rules;
             }
             editor.updateNodeDataFromId(selectedComponentID, updateData);
+            await syncNodePorts(selectedComponentID, updateData["comp_type"], updateData);
             $("#"+contextMenuSelectedComponent).find(".componentName").html(updateData.name);
             $('#componentEditDialog').removeAttr('open');
             editor.updateConnectionNodes(contextMenuSelectedComponent);
@@ -681,17 +978,11 @@ if (jobID != "0") {
 
                     if (component.routes != undefined) {
                         for (var outputName in component.routes) {
-                            var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compType+"/full");
                             var outputNameDrawflow;
-                            if (compTypeDataFull != false) {
-                                if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["output_port_names"] != undefined) {
-                                    for (var i in compTypeDataFull["x-class"]["output_port_names"]) {
-                                        if (compTypeDataFull["x-class"]["output_port_names"][i] == outputName) {
-                                            outputNameDrawflow = "output_"+(parseInt(i)+1);
-                                            break;
-                                        }
-                                    }
-                                }
+                            var outputPortNames = await getPortNamesForComponent(compType, component, "output");
+                            var outputPortIndex = outputPortNames.indexOf(outputName);
+                            if (outputPortIndex >= 0) {
+                                outputNameDrawflow = "output_" + (outputPortIndex + 1);
                             }
 
                             if (outputNameDrawflow != undefined) {
@@ -701,19 +992,14 @@ if (jobID != "0") {
 
                                     var inputID = getComponentIdFromName(connection.to);
                                     var inputName = connection["in_port"];
-                                    var compTypeInput = editor.getNodeFromId(inputID).data["comp_type"];
+                                    var inputNode = editor.getNodeFromId(inputID);
+                                    var compTypeInput = inputNode.data["comp_type"];
 
-                                    var compTypeDataFull = await ETL.api.get(serverID, "/configs/"+compTypeInput+"/full");
                                     var inputNameDrawflow;
-                                    if (compTypeDataFull != false) {
-                                        if (compTypeDataFull["x-class"] != undefined && compTypeDataFull["x-class"]["input_port_names"] != undefined) {
-                                            for (var i in compTypeDataFull["x-class"]["input_port_names"]) {
-                                                if (compTypeDataFull["x-class"]["input_port_names"][i] == inputName) {
-                                                    inputNameDrawflow = "input_"+(parseInt(i)+1);
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                    var inputPortNames = await getPortNamesForComponent(compTypeInput, inputNode.data, "input");
+                                    var inputPortIndex = inputPortNames.indexOf(inputName);
+                                    if (inputPortIndex >= 0) {
+                                        inputNameDrawflow = "input_" + (inputPortIndex + 1);
                                     }
 
                                     if (inputNameDrawflow != undefined) {
@@ -739,7 +1025,7 @@ if (jobID != "0") {
                     contextMenuSelectedComponent = $(component).attr("id");
                     var result = await contextMenuEditBtn(true);
                     if (result == true) {
-                        btnSaveComponent();
+                        await btnSaveComponent();
                     }
                 }
 
@@ -783,15 +1069,11 @@ if (jobID != "0") {
                                     var outputs = drawFlowComponent.outputs;
                                     for (var outputName in outputs) {
                                         var fromCompType = component["comp_type"];
-                                        var compTypeDataFrom = await ETL.api.get(serverID, "/configs/"+fromCompType+"/full");
                                         var realOutputName = "out";
-                                        if (compTypeDataFrom != false) {
-                                            if (compTypeDataFrom["x-class"] != undefined && compTypeDataFrom["x-class"]["output_port_names"] != undefined) {
-                                                var outputPortIndex = parseInt(outputName.split("_")[1]) - 1;
-                                                if (compTypeDataFrom["x-class"]["output_port_names"][outputPortIndex] != undefined) {
-                                                    realOutputName = compTypeDataFrom["x-class"]["output_port_names"][outputPortIndex];
-                                                }
-                                            }
+                                        var outputPortNames = await getPortNamesForComponent(fromCompType, component, "output");
+                                        var outputPortIndex = parseInt(outputName.split("_")[1]) - 1;
+                                        if (outputPortNames[outputPortIndex] != undefined) {
+                                            realOutputName = outputPortNames[outputPortIndex];
                                         }
                                         component["routes"][realOutputName] = [];
 
@@ -805,21 +1087,16 @@ if (jobID != "0") {
                                             var to = node.data.name;
                                             var toCompType = node.data["comp_type"];
 
-                                            var compTypeData = await ETL.api.get(serverID, "/configs/"+toCompType+"/full");
-                                            if (compTypeData != false) {
-                                                //console.log(compTypeData);
-                                                if (compTypeData["x-class"] != undefined && compTypeData["x-class"]["input_ports"] != undefined) {
-                                                    var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
-                                                    if (compTypeData["x-class"]["input_ports"][inputPortConnectionNo] != undefined) {
-                                                        var inputName = compTypeData["x-class"]["input_ports"][inputPortConnectionNo]["name"];
-                                                        component["routes"][realOutputName].push({
-                                                        //component["routes"]["out"].push({
-                                                            "to": to,
-                                                            "in_port": inputName
-                                                        });
-                                                    } 
-                                                }
+                                            var inputPortNames = await getPortNamesForComponent(toCompType, node.data, "input");
+                                            var inputPortConnectionNo = parseInt(connection.output.split("_")[1]) - 1;
+                                            var inputName = inputPortNames[inputPortConnectionNo];
+                                            if (typeof inputName != "string" || inputName == "") {
+                                                inputName = "in";
                                             }
+                                            component["routes"][realOutputName].push({
+                                                "to": to,
+                                                "in_port": inputName
+                                            });
                                         }
                                     }
                                     resolve2(component);
@@ -905,8 +1182,8 @@ if (jobID != "0") {
 
                     var title = selectedComponent.title;
                     var icon = selectedComponent.icon || "fa-solid fa-question";
-                    var inputPorts = selectedComponent["x-class"]["input_ports"].length || 0;
-                    var outputPorts = selectedComponent["x-class"]["output_ports"].length || 0;
+                    var inputPortNames = selectedComponent["x-class"]["input_port_names"] || [];
+                    var outputPortNames = selectedComponent["x-class"]["output_port_names"] || [];
 
                     var x_coordinate = 150;
                     var y_coordinate = 300;
@@ -936,18 +1213,26 @@ if (jobID != "0") {
                             "comp_type": compType
                         }
 
-                        for (var property of selectedComponent.properties) {
+                        var selectedComponentProperties = ETL.render.normalizeProperties(selectedComponent);
+                        for (var property of selectedComponentProperties) {
                             var propertyName = property.name;
                             var propertyValue = undefined;
-                            var propertyDefault = property.schema.default;
-                            var propertyType = property.schema.type;
+                            var normalizedSchema = ETL.render.normalizeSchema(property.schema, propertyName);
+                            var propertyDefault = normalizedSchema.default;
+                            var propertyType = normalizedSchema.type;
 
                             if (propertyType == "string") {
                                 propertyValue = propertyDefault || "";
                             } else if (propertyType == "object") {
                                 propertyValue = propertyDefault || {};
+                            } else if (propertyType == "array") {
+                                propertyValue = propertyDefault || [];
                             } else if (propertyType == "integer") {
                                 propertyValue = propertyDefault || 0;
+                            } else if (propertyType == "number") {
+                                propertyValue = propertyDefault || 0;
+                            } else if (propertyDefault == null && normalizedSchema.nullable === true) {
+                                propertyValue = null;
                             }
 
                             if (propertyValue != undefined) {
@@ -967,13 +1252,33 @@ if (jobID != "0") {
 
                     }
 
+                    if (Array.isArray(componentProperties["extra_input_ports"])) {
+                        inputPortNames = mergePortNames(
+                            inputPortNames,
+                            componentProperties["extra_input_ports"],
+                            componentProperties["in_port_schemas"] || {}
+                        );
+                    }
+                    if (Array.isArray(componentProperties["extra_output_ports"])) {
+                        outputPortNames = mergePortNames(
+                            outputPortNames,
+                            componentProperties["extra_output_ports"],
+                            componentProperties["out_port_schemas"] || {}
+                        );
+                    }
+
+                    var inputPorts = inputPortNames.length;
+                    var outputPorts = outputPortNames.length;
+
                     var html = "<span class='componentIcon'><i class='"+icon+"'></i></span><br><span class='componentName'>"+componentProperties["name"]+"</span>";
 
                     var nodeID = editor.addNode(compType, inputPorts, outputPorts, x_coordinate, y_coordinate, 'component', componentProperties, html);
 
                     $('#componentDialog').removeAttr('open');
 
-                    resolve(nodeID);
+                    syncNodePorts(nodeID, compType, componentProperties).then(function() {
+                        resolve(nodeID);
+                    });
                 } else {
                     resolve(false);
                 }
@@ -982,6 +1287,13 @@ if (jobID != "0") {
         });
 
     }
+
+    $(document).on("click", ".btnAddComponentToWhiteboard", function() {
+        var compType = $(this).attr("data-comp-type");
+        if (typeof compType == "string" && compType != "") {
+            addComponentToWhiteboard(compType);
+        }
+    });
 
 
     function getComponentIdFromName(name) {
@@ -1086,6 +1398,9 @@ if (jobID != "0") {
     editor.grid_size = 20;
 
     editor.start();
+    ETL.runtime = ETL.runtime || {};
+    ETL.runtime.editor = editor;
+    ETL.runtime.serverID = serverID;
 
     editor.on("zoom", function(zoom_level) {
         $("#zoomText").html(Math.round(zoom_level * 100) + "%");
@@ -1144,6 +1459,7 @@ if (jobID != "0") {
 
 
     loadJob();
+    $(window).on("beforeunload", clearExecutionPolling);
 
     });
 
@@ -1153,6 +1469,9 @@ if (jobID != "0") {
 
     $("#newJobSaveButton").click(function() {
         var postData = ETL.util.getFormData($("#jobDetailsFieldset"));
+        if (postData === false) {
+            return;
+        }
         var serverID = $("#newJobServerSelection").find(":selected").val();
 
         ETL.api.post(serverID, "/jobs/", postData).then(function(data) {

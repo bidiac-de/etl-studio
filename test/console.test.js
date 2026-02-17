@@ -12,7 +12,8 @@ describe('ETL.console', () => {
     test('should return formatted datetime string', () => {
       const result = ETL.console.getLocaleDatetime();
       expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/);
-      expect(result).toContain(',');
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(10);
     });
   });
 

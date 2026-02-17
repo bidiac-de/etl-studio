@@ -2,6 +2,29 @@
     cursor: pointer;
 }
 
+#jobTableBody tr.tableRowError {
+    cursor: default;
+    background: color-mix(in srgb, var(--pico-color-red-500) 8%, transparent);
+    border-left: 3px solid var(--pico-color-red-450);
+}
+
+#jobTableBody tr.tableRowError td {
+    color: var(--pico-color-red-650);
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+[data-theme='dark'] #jobTableBody tr.tableRowError td {
+    color: var(--pico-color-red-350);
+}
+
+#jobTableBody tr.tableRowError td small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    opacity: 0.85;
+}
+
 .tableFit {
     width: 0; 
     min-width: fit-content;

@@ -11,6 +11,12 @@
             <button class="outline secondary" data-tooltip="Credentials" data-placement="bottom" onclick="window.location.href='?credentials';">
                 <i class="fa-solid fa-key"></i>
             </button>
+            <button class="outline secondary" data-tooltip="Executions" data-placement="bottom" onclick="window.location.href='?executions';">
+                <i class="fa-solid fa-list-check"></i>
+            </button>
+            <button class="outline secondary" data-tooltip="Schedules" data-placement="bottom" onclick="window.location.href='?schedules';">
+                <i class="fa-solid fa-calendar-days"></i>
+            </button>
             <button class="outline secondary" data-tooltip="Server" data-placement="bottom" onclick="window.location.href='?server';">
                 <i class="fa-solid fa-server"></i>
             </button>

@@ -41,6 +41,8 @@
                     if (isset($_GET["job"])) {
                         $jobID = $_GET["job"];
                         include("./pages/uiJob/job.php");
+                    } else if (isset($_GET["schedules"])) {
+                        include("./pages/uiSchedules/schedules.php");
                     } else if (isset($_GET["settings"])) {
                         include("./pages/uiSettings/settings.php");
                     } else if (isset($_GET["server"])) {
@@ -49,6 +51,8 @@
                         include("./pages/uiUserManagement/userManagement.php");
                     } else if (isset($_GET["credentials"])) {
                         include("./pages/uiCredentials/credentials.php");
+                    } else if (isset($_GET["executions"])) {
+                        include("./pages/uiExecutions/executions.php");
                     } else {
                         include("./pages/uiDashboard/dashboard.php");
                     }

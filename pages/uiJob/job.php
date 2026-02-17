@@ -28,6 +28,9 @@
             <button class="outline secondary" data-tooltip="Settings" data-placement="bottom" id="btnSettings">
                 <i class="fa-solid fa-gear"></i>
             </button>
+            <button class="outline secondary" data-tooltip="Schedules" data-placement="bottom" onclick="window.location.href='?schedules&serverID=<?=$serverID?>&jobID=<?=$jobID?>';">
+                <i class="fa-solid fa-calendar-days"></i>
+            </button>
             <!--<button class="outline secondary" data-tooltip="Version" data-placement="bottom">
                 <i class="fa-solid fa-clock-rotate-left"></i>
             </button>-->
@@ -66,6 +69,40 @@
             <div id="drawflow"></div>
             <textarea id="codemirror"></textarea>
         </div>
+        <aside id="executionStatusPanel" class="executionPanelHidden" aria-live="polite">
+            <header>
+                <strong><i class="fa-solid fa-signal"></i> Execution Live Status</strong>
+                <span id="executionStatusValue" class="executionStatusBadge">IDLE</span>
+            </header>
+            <div class="executionMeta">
+                <small>ID: <code id="executionStatusExecutionID">-</code></small>
+                <small>Environment: <span id="executionStatusEnvironment">-</span></small>
+                <small>Attempt: <span id="executionStatusAttempt">-</span></small>
+                <small>Total Received: <span id="executionStatusRowsReceived">0</span></small>
+                <small>Total Forwarded: <span id="executionStatusRowsForwarded">0</span></small>
+            </div>
+            <div id="executionStatusError" class="executionErrorBox" style="display:none;"></div>
+            <div class="executionComponentTableWrap">
+                <table class="striped executionComponentTable">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Status</th>
+                            <th>Received</th>
+                            <th>Forwarded</th>
+                            <th>Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="executionStatusComponentsBody">
+                        <tr>
+                            <td colspan="5"><small>No execution started yet.</small></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <label class="executionLogLabel">Live Log Tail</label>
+            <pre id="executionStatusLogs"></pre>
+        </aside>
         <div id="console">
             <div class="title">
                 <span><i class="fa-solid fa-terminal"></i></span>

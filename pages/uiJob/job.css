@@ -67,6 +67,61 @@ body {
     padding-top: 10px;
 }
 
+#settingsDialogMain .generatedField,
+#componentEditDialogMain .generatedField,
+#jobDetailsFieldset .generatedField {
+    margin-bottom: 1rem;
+    display: block;
+}
+
+#settingsDialogMain .generatedField input,
+#componentEditDialogMain .generatedField input,
+#settingsDialogMain .generatedField select,
+#componentEditDialogMain .generatedField select,
+#settingsDialogMain .generatedField textarea,
+#componentEditDialogMain .generatedField textarea,
+#jobDetailsFieldset .generatedField input,
+#jobDetailsFieldset .generatedField select,
+#jobDetailsFieldset .generatedField textarea {
+    margin-top: 0.35rem;
+}
+
+.fieldDescription {
+    display: block;
+    margin-top: 0.35rem;
+    line-height: 1.35;
+    color: var(--pico-color-slate-550);
+}
+
+[data-theme='dark'] .fieldDescription {
+    color: var(--pico-color-slate-400);
+}
+
+.contextTemplateAssist {
+    margin-top: -0.4rem;
+    margin-bottom: 0.9rem;
+}
+
+.contextTemplateTokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+.contextTemplateTokens .btnInsertContextToken {
+    margin-bottom: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.75rem;
+    padding: 0.1rem 0.55rem;
+}
+
+.jsonInput {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+    min-height: 9rem;
+}
+
 #codemirror {
     display: none;
     width: 100%;
@@ -106,6 +161,138 @@ body {
     height: calc(100% - 15px);
     z-index: 1;
     overflow: hidden;
+}
+
+#executionStatusPanel {
+    position: absolute;
+    top: 78px;
+    right: 14px;
+    width: min(520px, 48vw);
+    max-height: calc(100vh - 130px);
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-color-slate-250);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    z-index: 98;
+    padding: 0.7rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+[data-theme='dark'] #executionStatusPanel {
+    border-color: var(--pico-color-slate-700);
+}
+
+.executionPanelHidden {
+    display: none !important;
+}
+
+#executionStatusPanel header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.1rem;
+}
+
+.executionStatusBadge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.16rem 0.6rem;
+    border: 1px solid var(--pico-color-slate-400);
+}
+
+#executionStatusPanel[data-status='RUNNING'] .executionStatusBadge,
+#executionStatusPanel[data-status='RETRYING'] .executionStatusBadge,
+#executionStatusPanel[data-status='STARTING'] .executionStatusBadge {
+    border-color: var(--pico-color-azure-450);
+    color: var(--pico-color-azure-550);
+}
+
+#executionStatusPanel[data-status='SUCCESS'] .executionStatusBadge {
+    border-color: var(--pico-color-green-450);
+    color: var(--pico-color-green-550);
+}
+
+#executionStatusPanel[data-status='FAILED'] .executionStatusBadge,
+#executionStatusPanel[data-status='CANCELLED'] .executionStatusBadge {
+    border-color: var(--pico-color-red-450);
+    color: var(--pico-color-red-550);
+}
+
+.executionMeta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 0.7rem;
+}
+
+.executionMeta small code {
+    font-size: 0.72rem;
+}
+
+.executionErrorBox {
+    background: color-mix(in srgb, var(--pico-color-red-500) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pico-color-red-550) 55%, transparent);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+}
+
+.executionComponentTableWrap {
+    max-height: 170px;
+    overflow: auto;
+    border: 1px solid var(--pico-color-slate-200);
+    border-radius: 8px;
+}
+
+[data-theme='dark'] .executionComponentTableWrap {
+    border-color: var(--pico-color-slate-700);
+}
+
+.executionComponentTable {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.executionComponentTable th,
+.executionComponentTable td {
+    font-size: 0.76rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    white-space: nowrap;
+}
+
+.executionLogLabel {
+    margin-bottom: -0.25rem;
+    font-size: 0.78rem;
+}
+
+#executionStatusLogs {
+    margin: 0;
+    min-height: 120px;
+    max-height: 220px;
+    overflow: auto;
+    border-radius: 8px;
+    border: 1px solid var(--pico-color-slate-250);
+    padding: 0.5rem;
+    background: color-mix(in srgb, var(--pico-background-color) 88%, var(--pico-color-slate-50));
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+[data-theme='dark'] #executionStatusLogs {
+    border-color: var(--pico-color-slate-700);
+}
+
+@media (max-width: 960px) {
+    #executionStatusPanel {
+        width: calc(100vw - 28px);
+        right: 14px;
+        top: auto;
+        bottom: 34px;
+        max-height: 55vh;
+    }
 }
 
 #zoomNeutral, #zoomDecrement, #zoomIncrement {
@@ -293,4 +480,18 @@ a {
 
 #ruleTable {
     margin-top: 10px;
+    width: 100%;
+}
+
+.tablePortSchema {
+    width: 100%;
+}
+
+.tablePortSchema td:first-child {
+    width: 50%;
+    word-break: break-word;
+}
+
+#componentEditDialogMain .tablePortSchema td:last-child {
+    text-align: right;
 }

@@ -23,6 +23,11 @@ function upsertMappingEnvironments(environments) {
     }
 }
 
+function environmentPillHTML(label, icon) {
+    var iconClass = icon || "fa-solid fa-layer-group";
+    return "<span style='display:inline-flex;align-items:center;gap:0.3em;'><i class='" + iconClass + "' style='font-size:0.85em;'></i> " + label + "</span>";
+}
+
 function renderMappingTableHeader() {
     var html = "";
     html += "<th class='tableFit'><i class='fa-solid fa-fingerprint'></i> ID</th>";
@@ -30,7 +35,7 @@ function renderMappingTableHeader() {
     for (var environmentInfo of mappingEnvironments) {
         var label = environmentInfo.label || environmentInfo.value;
         var icon = environmentInfo.icon || "fa-solid fa-layer-group";
-        html += "<th class='tableFit'><i class='"+icon+"'></i> "+label+"</th>";
+        html += "<th class='tableFit'>" + environmentPillHTML(label, icon) + "</th>";
     }
     html += "<th class='tableFit'></th>";
     $("#credentialMappingTableHeadRow").html(html);
@@ -197,9 +202,12 @@ async function loadCredentialTables() {
                 var contextPort = contextData.port;
                 var contextDatabase = contextData.database;
                 var contextUser = contextData.user;
-                var contextPassword = contextData.password;
+                var hasPassword = contextData.has_password === true;
+                var contextPassword = hasPassword
+                    ? "<i class='fa-solid fa-circle-check pico-color-green-500'></i>"
+                    : "<i class='fa-solid fa-circle-minus pico-color-slate-450'></i>";
 
-                $("#credentialTableBody").append("<tr serverid='"+selectedServerID+"' contextid='"+contextID+"'><td>"+contextID+"</td><td>"+contextName+"</td><td>"+contextHost+"</td><td>"+contextPort+"</td><td>"+contextDatabase+"</td><td>"+contextUser+"</td><td>"+contextPassword+"</td><td><button class='pico-background-red-550 btnDeleteContext'><i class='fa-solid fa-trash'></i></button></td></tr>");
+                $("#credentialTableBody").append("<tr serverid='"+selectedServerID+"' contextid='"+contextID+"'><td>"+contextID+"</td><td>"+contextName+"</td><td>"+contextHost+"</td><td>"+contextPort+"</td><td>"+contextDatabase+"</td><td>"+contextUser+"</td><td style='text-align:center;'>"+contextPassword+"</td><td><button class='pico-background-red-550 btnDeleteContext'><i class='fa-solid fa-trash'></i></button></td></tr>");
             }
 
             if (context.kind == "context") {
@@ -230,9 +238,104 @@ $(document).on("click", ".btnDeleteContext", function() {
     });
 });
 
+// Custom environment support
+$("#btnAddCustomEnvironment").click(function() {
+    var raw = ($("#customEnvironmentInput").val() || "").trim().toUpperCase();
+    if (raw === "") {
+        return;
+    }
+    var exists = false;
+    for (var env of mappingEnvironments) {
+        if (env.value === raw) {
+            exists = true;
+            break;
+        }
+    }
+    if (!exists) {
+        mappingEnvironments.push({ value: raw, label: raw, icon: "fa-solid fa-layer-group" });
+        renderMappingTableHeader();
+    }
+    $("#customEnvironmentInput").val("");
+    refreshMappingDialogForServer();
+});
+
+// Edit credential by clicking table row
+$(document).on("click", "#credentialTableBody tr", function(e) {
+    if ($(e.target).closest("button").length > 0) {
+        return;
+    }
+    var serverID = $(this).attr("serverid");
+    var contextID = $(this).attr("contextid");
+    if (serverID && contextID) {
+        window.location.href = "?credentials&credentialID=" + encodeURIComponent(contextID) + "&contextType=credential&serverID=" + encodeURIComponent(serverID) + "&edit=1";
+    }
+});
+
+// Edit mapping by clicking table row
+$(document).on("click", "#credentialMappingTableBody tr", function(e) {
+    if ($(e.target).closest("button").length > 0) {
+        return;
+    }
+    var serverID = $(this).attr("serverid");
+    var contextID = $(this).attr("contextid");
+    if (serverID && contextID) {
+        window.location.href = "?credentials&credentialID=" + encodeURIComponent(contextID) + "&contextType=mapping&serverID=" + encodeURIComponent(serverID) + "&edit=1";
+    }
+});
+
+// Pre-fill edit form when edit mode is detected
+async function loadEditData() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("edit") !== "1") {
+        return;
+    }
+    var contextID = urlParams.get("credentialID");
+    var serverID = normalizeServerId(urlParams.get("serverID"));
+    var contextType = urlParams.get("contextType");
+    if (!contextID || !serverID) {
+        return;
+    }
+
+    var contextData = await ETL.api.get(serverID, "/contexts/" + contextID);
+    if (contextData === false) {
+        return;
+    }
+
+    if (contextType === "credential") {
+        // Set server selection
+        $("#newCredentialServerSelection").val(String(serverID));
+        // Fill fields
+        $("#formCredential form input[name='name']").val(contextData.name || "");
+        $("#formCredential form input[name='host']").val(contextData.host || "");
+        $("#formCredential form input[name='port']").val(contextData.port || "");
+        $("#formCredential form input[name='database']").val(contextData.database || "");
+        $("#formCredential form input[name='user']").val(contextData.user || "");
+        // Don't pre-fill password for security
+        $("#formCredential form input[name='pool_max_size']").val(contextData.pool_max_size || "0");
+        $("#formCredential form input[name='pool_timeout_s']").val(contextData.pool_timeout_s || "0");
+    } else if (contextType === "mapping") {
+        // Set server selection
+        $("#newCredentialMappingServerSelection").val(String(serverID));
+        await refreshMappingDialogForServer();
+        // Fill fields
+        $("#name").val(contextData.name || "");
+        if (contextData.environment) {
+            $("#mappingEnvironment").val(contextData.environment);
+        }
+        // Fill credential mapping selects
+        if (contextData.credentials_ids) {
+            for (var envKey in contextData.credentials_ids) {
+                var credId = contextData.credentials_ids[envKey];
+                $("#credentialMapping-" + envKey).val(credId);
+            }
+        }
+    }
+}
+
 (async function initCredentialsPage() {
     await loadCredentialTables();
     if ($("#newCredentialMappingServerSelection").length > 0) {
         await refreshMappingDialogForServer();
     }
+    await loadEditData();
 })();

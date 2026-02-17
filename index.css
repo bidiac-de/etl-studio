@@ -118,3 +118,17 @@ header .grid input, header .grid h2 {
 .pico-background-red-550 {
     border-color: transparent;
 }
+
+textarea.jsonInvalid {
+    border-color: var(--pico-color-red-500) !important;
+    outline-color: var(--pico-color-red-500) !important;
+}
+
+.componentSection {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.componentSection legend {
+    margin-bottom: 0.35rem;
+}

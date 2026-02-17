@@ -17,6 +17,13 @@ if (darktheme) {
  * @namespace ETL
  */
 var ETL = {};
+ETL.runtime = ETL.runtime || {};
+if (ETL.runtime.editor === undefined) {
+    ETL.runtime.editor = null;
+}
+if (ETL.runtime.serverID === undefined) {
+    ETL.runtime.serverID = 0;
+}
 
 
 /**
@@ -102,6 +109,7 @@ ETL.api = ETL.api || {};
 ETL.contract = ETL.contract || {};
 
 ETL.api.timeout = 2000;
+ETL.api._lastError = null;
 ETL.contract.requiredVersion = "core-studio-v1";
 ETL.contract.cache = ETL.contract.cache || {};
 ETL.contract.blocked = false;
@@ -145,6 +153,7 @@ ETL.api._request = function(serverID, endpoint, method, data, showError, rawCont
                     resolve(responseData);
                 },
                 error: function(responseData) {
+                    ETL.api._lastError = responseData;
                     if (showError) {
                         ETL.api.onError(responseData);
                     }
@@ -386,55 +395,253 @@ ETL.api.delete = function(serverID = 0, endpoint = "", showError = false) {
  */
 ETL.render = ETL.render || {};
 
+ETL.render.escapeHTML = function(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+ETL.render.jsonFieldDefault = function(schemaType, value) {
+    if (value === undefined || value === null || value === "") {
+        return schemaType == "array" ? "[]" : "{}";
+    }
+
+    if (typeof value == "string") {
+        var trimmed = value.trim();
+        if (trimmed == "") {
+            return schemaType == "array" ? "[]" : "{}";
+        }
+        try {
+            var parsed = JSON.parse(trimmed);
+            return JSON.stringify(parsed, null, 2);
+        } catch (error) {
+            return value;
+        }
+    }
+
+    try {
+        return JSON.stringify(value, null, 2);
+    } catch (error) {
+        return schemaType == "array" ? "[]" : "{}";
+    }
+}
+
+ETL.render.prettyFieldName = function(propertyName = "") {
+    if (typeof propertyName != "string") {
+        return "Field";
+    }
+    var human = propertyName.replace(/[_-]+/g, " ").trim();
+    if (human == "") {
+        return "Field";
+    }
+    return human.replace(/\b\w/g, function(char) {
+        return char.toUpperCase();
+    });
+}
+
+ETL.render.schemaDescriptionHTML = function(description = "") {
+    if (typeof description != "string" || description.trim() == "") {
+        return "";
+    }
+    return "<small class='fieldDescription'>" + ETL.render.escapeHTML(description) + "</small>";
+}
+
+ETL.render.normalizeProperties = function(rootSchema) {
+    if (rootSchema == null || typeof rootSchema != "object") {
+        return [];
+    }
+
+    var props = rootSchema["properties"];
+    if (Array.isArray(props)) {
+        return props;
+    }
+
+    if (props != null && typeof props == "object") {
+        var required = Array.isArray(rootSchema["required"]) ? rootSchema["required"] : [];
+        var normalized = [];
+        for (var name in props) {
+            if (!Object.prototype.hasOwnProperty.call(props, name)) {
+                continue;
+            }
+            var schema = props[name];
+            if (schema == null || typeof schema != "object") {
+                continue;
+            }
+            normalized.push({
+                name: name,
+                schema: schema,
+                required: required.indexOf(name) >= 0
+            });
+        }
+        return normalized;
+    }
+
+    return [];
+}
+
+ETL.render._simpleNullableUnionBranch = function(schema, unionKey) {
+    var union = schema[unionKey];
+    if (!Array.isArray(union) || union.length != 2) {
+        return null;
+    }
+
+    var nonNullBranch = null;
+    var hasNullBranch = false;
+    for (var branch of union) {
+        if (branch != null && typeof branch == "object" && branch.type == "null") {
+            hasNullBranch = true;
+            continue;
+        }
+        if (branch != null && typeof branch == "object" && nonNullBranch == null) {
+            nonNullBranch = branch;
+            continue;
+        }
+        return null;
+    }
+
+    if (!hasNullBranch || nonNullBranch == null) {
+        return null;
+    }
+    return nonNullBranch;
+}
+
+ETL.render.normalizeSchema = function(schema, propertyName = "") {
+    var normalized = {};
+    if (schema != null && typeof schema == "object") {
+        for (var key in schema) {
+            normalized[key] = schema[key];
+        }
+    }
+
+    var nullableBranch = ETL.render._simpleNullableUnionBranch(normalized, "anyOf");
+    if (nullableBranch == null) {
+        nullableBranch = ETL.render._simpleNullableUnionBranch(normalized, "oneOf");
+    }
+
+    if (nullableBranch != null) {
+        var merged = {};
+        for (var branchKey in nullableBranch) {
+            merged[branchKey] = nullableBranch[branchKey];
+        }
+        for (var schemaKey in normalized) {
+            if (schemaKey == "anyOf" || schemaKey == "oneOf") {
+                continue;
+            }
+            merged[schemaKey] = normalized[schemaKey];
+        }
+        merged["nullable"] = true;
+        normalized = merged;
+    }
+
+    if (
+        Array.isArray(normalized["enum"]) &&
+        (normalized["type"] == "string" || normalized["type"] == undefined || normalized["type"] == null)
+    ) {
+        normalized["type"] = "select";
+    }
+
+    if (typeof normalized["title"] != "string" || normalized["title"].trim() == "") {
+        normalized["title"] = ETL.render.prettyFieldName(propertyName);
+    }
+
+    return normalized;
+}
+
 /**
  * Converts a property schema to HTML form input
  * @param {Object} property - The property schema object
  * @param {string} property.name - The property name
  * @param {boolean} property.required - Whether the property is required
  * @param {Object} property.schema - The JSON schema for the property
- * @param {string} property.schema.type - The data type (string, integer, boolean, select)
+ * @param {string} property.schema.type - The data type (string, integer, number, boolean, select, array, object)
  * @param {string} property.schema.description - Description of the property
  * @param {string} property.schema.title - Display title for the property
  * @param {*} property.schema.default - Default value for the property
  * @param {Array} property.schema.enum - Enum values for select type
- * @param {number} property.minimum - Minimum value for integer type
  * @param {*} [defaultValue] - Override default value
  * @returns {string} HTML string for the form input
  */
 ETL.render.propertyToHTML = function(property, defaultValue = undefined) {
-    //console.log(property);
     var propertyName = property["name"];
     var required = property["required"] ? "required" : "";
-    var schema = property["schema"];
+    var schema = ETL.render.normalizeSchema(property["schema"], propertyName);
     var description = schema["description"] || "";
     var title = schema["title"] || "";
+    var nullableAttr = schema["nullable"] === true ? "data-nullable='true'" : "";
+    var helper = ETL.render.schemaDescriptionHTML(description);
     if (defaultValue === undefined) {
         defaultValue = schema["default"];
         if (defaultValue == undefined) {
             defaultValue = "";
         }
     }
-    
-    jobDetailsFieldsetHTML = "";
+    if (schema["nullable"] === true && defaultValue === null && schema.type != "boolean") {
+        defaultValue = "";
+    }
 
-    if (schema.type == "string") {
-        jobDetailsFieldsetHTML += "<label>"+title+"<input class='formInput' autocomplete='off' name='"+propertyName+"' value='"+defaultValue+"' type='text' "+required+"/></label>";
-    } else if (schema.type == "integer") {
+    var jobDetailsFieldsetHTML = "";
+
+    var nullableClearBtn = "";
+    if (schema["nullable"] === true) {
+        nullableClearBtn = " <button type='button' class='secondary outline btnClearNullable' data-target='" + propertyName + "' style='font-size:0.7rem;padding:0.15rem 0.35rem;vertical-align:middle;' title='Clear to null'><i class='fa-solid fa-xmark'></i></button>";
+    }
+
+    if (schema.type == "string" && schema.widget == "textarea") {
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + nullableClearBtn + "<br><textarea class='formInput' autocomplete='off' name='" + propertyName + "' rows='6' " + nullableAttr + " " + required + ">" + ETL.render.escapeHTML(defaultValue) + "</textarea>" + helper + "</label>";
+    } else if (schema.type == "string") {
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + nullableClearBtn + "<input class='formInput' autocomplete='off' name='" + propertyName + "' value='" + ETL.render.escapeHTML(defaultValue) + "' type='text' " + nullableAttr + " " + required + "/>" + helper + "</label>";
+    } else if (schema.type == "integer" || schema.type == "number") {
         var minimum = "";
-        if (property.minimum != undefined) {
-            minimum = "min='"+property.minimum+"'";
+        if (schema.minimum != undefined) {
+            minimum = "min='" + ETL.render.escapeHTML(schema.minimum) + "'";
         }
-        jobDetailsFieldsetHTML += "<label>"+title+"<input class='formInput' autocomplete='off' name='"+propertyName+"' value='"+defaultValue+"' type='number' steps='1' "+minimum+" oninput='this.value=(parseInt(this.value)||0)' "+required+"/></label>";
+        var maximum = "";
+        if (schema.maximum != undefined) {
+            maximum = "max='" + ETL.render.escapeHTML(schema.maximum) + "'";
+        }
+        var step = schema.type == "integer" ? "1" : "any";
+        var numberValue = defaultValue;
+        if (numberValue == null) {
+            numberValue = "";
+        }
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<input class='formInput' autocomplete='off' name='" + propertyName + "' value='" + ETL.render.escapeHTML(numberValue) + "' type='number' step='" + step + "' data-number-kind='" + schema.type + "' " + minimum + " " + maximum + " " + nullableAttr + " " + required + "/>" + helper + "</label>";
     } else if (schema.type == "boolean") {
         defaultValue = defaultValue === true ? "checked" : "";
-        jobDetailsFieldsetHTML += "<label>"+title+"<br><input class='formInput' style='margin-top: 3px;' autocomplete='off' name='"+propertyName+"' "+defaultValue+" type='checkbox' "+required+"/></label>";
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<br><input class='formInput' style='margin-top: 3px;' autocomplete='off' name='" + propertyName + "' " + defaultValue + " type='checkbox' " + required + "/>" + helper + "</label>";
     } else if (schema.type == "select") {
-        jobDetailsFieldsetHTML += "<label>"+title+"<br><select class='formInput' name='"+propertyName+"' aria-label='"+title+"' "+required+">";
-        for (var option of schema.enum) {
-            var selected = option == defaultValue ? "selected" : "";
-            jobDetailsFieldsetHTML += "<option "+selected+" value='"+option+"'>"+option+"</option>";
+        var selectValue = defaultValue;
+        if (selectValue == null) {
+            selectValue = "";
         }
-        jobDetailsFieldsetHTML += "</select></label>";
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<br><select class='formInput' name='" + propertyName + "' aria-label='" + ETL.render.escapeHTML(title) + "' " + nullableAttr + " " + required + ">";
+        for (var option of schema.enum) {
+            var selected = option == selectValue ? "selected" : "";
+            jobDetailsFieldsetHTML += "<option " + selected + " value='" + ETL.render.escapeHTML(option) + "'>" + ETL.render.escapeHTML(option) + "</option>";
+        }
+        jobDetailsFieldsetHTML += "</select>" + helper + "</label>";
+    } else if (schema.type == "array" || schema.type == "object") {
+        var jsonDefault = "";
+        if (!(schema["nullable"] === true && (defaultValue === null || defaultValue === ""))) {
+            jsonDefault = ETL.render.jsonFieldDefault(schema.type, defaultValue);
+        }
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<br><textarea class='formInput jsonInput' autocomplete='off' name='" + propertyName + "' data-json='true' data-json-type='" + schema.type + "' " + nullableAttr + " rows='8' " + required + ">" + ETL.render.escapeHTML(jsonDefault) + "</textarea>" + helper + "</label>";
+        jobDetailsFieldsetHTML += "<button type='button' class='secondary outline btnFormatJson' data-target='" + propertyName + "' style='font-size:0.75rem;padding:0.2rem 0.5rem;margin-top:-0.5rem;margin-bottom:0.5rem;'>Format JSON</button>";
+    } else {
+        var fallbackType = "object";
+        if (Array.isArray(defaultValue)) {
+            fallbackType = "array";
+        } else if (defaultValue != null && typeof defaultValue == "object") {
+            fallbackType = "object";
+        }
+        var fallbackDefault = ETL.render.jsonFieldDefault(fallbackType, defaultValue);
+        if (schema["nullable"] === true && (defaultValue === null || defaultValue === "")) {
+            fallbackDefault = "";
+        }
+        jobDetailsFieldsetHTML += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<br><textarea class='formInput jsonInput' autocomplete='off' name='" + propertyName + "' data-json='true' data-json-type='" + fallbackType + "' " + nullableAttr + " rows='8' " + required + ">" + ETL.render.escapeHTML(fallbackDefault) + "</textarea>" + helper + "</label>";
+        jobDetailsFieldsetHTML += "<button type='button' class='secondary outline btnFormatJson' data-target='" + propertyName + "' style='font-size:0.75rem;padding:0.2rem 0.5rem;margin-top:-0.5rem;margin-bottom:0.5rem;'>Format JSON</button>";
     }
 
     return jobDetailsFieldsetHTML;
@@ -450,20 +657,17 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
     return new Promise(function(resolve, reject) {
         ETL.api.get(serverID, "/configs/job").then(function(rawJsonData) {
             var data = ETL.util.deref(rawJsonData);
-            //console.log(data);
+            var properties = ETL.render.normalizeProperties(data);
 
             var html = "";
 
-            if (data.properties != undefined) {
+            if (properties.length > 0) {
 
                 if (jobID != undefined) {
                     ETL.api.get(serverID, "/jobs/"+jobID).then(function(jobData) {
                         if (jobData !== false) {
-                            //console.log(jobData);
-                            for (var property of data.properties) {
+                            for (var property of properties) {
                                 var propertyName = property["name"];
-                                //console.log(propertyName);
-                                //console.log(jobData[propertyName]);
                                 html += ETL.render.propertyToHTML(property, jobData[propertyName]);
                             }
                             resolve(html);
@@ -472,7 +676,7 @@ ETL.render.jobEdit = function(serverID, jobID = undefined) {
                         }
                     });
                 } else {
-                    for (var property of data.properties) {
+                    for (var property of properties) {
                         html += ETL.render.propertyToHTML(property);
                     }
                     resolve(html);
@@ -529,98 +733,219 @@ ETL.render.propertyRuleToHTML = function(data = {}, level = 0) {
  * @param {string|number} componentID - The component ID to edit
  * @returns {Promise<string|boolean>} Promise that resolves to HTML string or false on error
  */
-ETL.render.componentEdit = function(componentID) {
-    return new Promise(function(resolve, reject) {
+ETL.render.componentEdit = async function(componentID, options = {}) {
+    try {
+        var editorInstance = options.editor;
+        if (editorInstance == null && ETL.runtime != null) {
+            editorInstance = ETL.runtime.editor;
+        }
+        if (editorInstance == null && typeof editor != "undefined") {
+            editorInstance = editor;
+        }
+        if (editorInstance == null || typeof editorInstance.getNodeFromId != "function") {
+            return false;
+        }
 
-        var selectedEditComponent = editor.getNodeFromId(componentID);
+        var currentServerID = options.serverID;
+        if (currentServerID == null && ETL.runtime != null) {
+            currentServerID = ETL.runtime.serverID;
+        }
+        if (currentServerID == null && typeof serverID != "undefined") {
+            currentServerID = serverID;
+        }
+        currentServerID = parseInt(currentServerID, 10);
+        if (Number.isNaN(currentServerID)) {
+            currentServerID = 0;
+        }
+
+        var selectedEditComponent = editorInstance.getNodeFromId(componentID);
+        if (
+            selectedEditComponent == null ||
+            selectedEditComponent.data == null ||
+            typeof selectedEditComponent.data != "object"
+        ) {
+            return false;
+        }
+
         var compType = selectedEditComponent.data["comp_type"];
-        //console.log(selectedEditComponent, compType);
+        if (typeof compType != "string" || compType == "") {
+            return false;
+        }
 
-        ETL.api.get(serverID, "/configs/"+compType+"/form").then(async function(componentFormRaw) {
-            var data = ETL.util.deref(componentFormRaw);
-            var html = "";
+        var componentFormRaw = await ETL.api.get(currentServerID, "/configs/"+compType+"/form");
+        if (componentFormRaw === false) {
+            return false;
+        }
+        var data = ETL.util.deref(componentFormRaw);
+        var html = "";
+        var renderedFieldCount = 0;
+        var properties = ETL.render.normalizeProperties(data);
+        var hasPropertiesSource = data != null && typeof data == "object" && data.properties != undefined;
 
-            if (data.properties != undefined) {
-                var uiHints = data["x-ui"];
-                if (uiHints == null || typeof uiHints != "object") {
-                    ETL.contract.block("Component form schema is missing required x-ui hints.");
-                    resolve(false);
-                    return;
-                }
+        if (!hasPropertiesSource) {
+            return false;
+        }
 
-                var contextSelectorHint = uiHints["context_selector"] || {};
-                var ruleBuilderHint = uiHints["rule_builder"] || {};
-                var portSchemaHint = uiHints["port_schema_editor"] || {};
+        var uiHints = data["x-ui"];
+        if (uiHints == null || typeof uiHints != "object") {
+            ETL.contract.block("Component form schema is missing required x-ui hints.");
+            return false;
+        }
 
-                var contextFieldName = contextSelectorHint["field"];
-                var contextSourceEndpoint = contextSelectorHint["source_endpoint"] || "/contexts/";
-                var ruleFieldName = ruleBuilderHint["field"];
-                var portSchemaFields = Array.isArray(portSchemaHint["fields"]) ? portSchemaHint["fields"] : [];
+        var contextSelectorHint = uiHints["context_selector"] || {};
+        var ruleBuilderHint = uiHints["rule_builder"] || {};
+        var portSchemaHint = uiHints["port_schema_editor"] || {};
 
-                for (var property of data.properties) {
-                    var propertyName = property["name"];
-                    var schema = property["schema"];
-                    var title = schema["title"] || "";
+        var contextFieldName = contextSelectorHint["field"];
+        var contextSourceEndpoint = contextSelectorHint["source_endpoint"] || "/contexts/";
+        var contextKeysEndpoint = contextSelectorHint["keys_endpoint"] || contextSourceEndpoint;
+        var ruleFieldName = ruleBuilderHint["field"];
+        var portSchemaFields = Array.isArray(portSchemaHint["fields"]) ? portSchemaHint["fields"] : [];
 
-                    if (propertyName == contextFieldName) {
-                        html += "<label>"+title+"<br><select class='formInput' name='"+propertyName+"' aria-label='"+title+"'><option value=''></option>";
-                        var contextList = await ETL.api.get(serverID, contextSourceEndpoint);
-                        if (contextList !== false) {
-                            for (var context of contextList) {
-                                var contextID = context.id;
-                                var contextName = context.name;
-                                if (context.kind == "context") {
-                                    var selected = selectedEditComponent.data[propertyName] == contextID ? "selected" : "";
-                                    html += "<option value='"+contextID+"' "+selected+">"+contextID + " - " + contextName+"</option>";
-                                }
-                            }
-                        }
-                        html += "</select></label>";
-                        continue;
-                    }
+        // x-ui sections: group fields into collapsible fieldsets
+        var uiSections = Array.isArray(uiHints["sections"]) ? uiHints["sections"] : [];
+        var fieldToSection = {};
+        for (var si = 0; si < uiSections.length; si++) {
+            var section = uiSections[si];
+            var sectionFields = Array.isArray(section["fields"]) ? section["fields"] : [];
+            for (var sf = 0; sf < sectionFields.length; sf++) {
+                fieldToSection[sectionFields[sf]] = si;
+            }
+        }
+        var openSection = -1;
 
-                    if (propertyName == ruleFieldName) {
-                        html += "<label>"+title+"</label>";
-                        html += "<button class='secondary btnAddSingleRule' style='margin-right: 10px;'><i class='fa-solid fa-plus'></i> Simple Rule</button>";
-                        html += "<button class='secondary btnAddLogicalRule'><i class='fa-solid fa-plus'></i> Combined Rule</button>";
-                        var ruleTableContent = ETL.render.propertyRuleToHTML(selectedEditComponent.data[propertyName]);
-                        html += "<table id='ruleTable'>"+ruleTableContent+"</table>";
-                        continue;
-                    }
-
-                    if (portSchemaFields.indexOf(propertyName) >= 0) {
-                        var portNames = [];
-                        var classMeta = data["x-class"] || {};
-                        if (propertyName.indexOf("out_port_") === 0 && Array.isArray(classMeta["output_port_names"])) {
-                            portNames = classMeta["output_port_names"];
-                        } else if (propertyName.indexOf("in_port_") === 0 && Array.isArray(classMeta["input_port_names"])) {
-                            portNames = classMeta["input_port_names"];
-                        }
-
-                        html += "<label>"+title+"</label>";
-                        html += "<table class='tablePortSchema' data-schema-field='"+propertyName+"'>";
-                        for (var portName of portNames) {
-                            html += "<tr><td>"+portName+"</td>";
-                            html += "<td><button class='btnEditPortSchema secondary' data-schema-field='"+propertyName+"' data-port-name='"+portName+"'><i class='fa-solid fa-pencil'></i> Edit schema</button></td></tr>";
-                        }
-                        html += "</table>";
-                        continue;
-                    }
-
-                    html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
-                    
-                }
-
-                
-
-
-                resolve(html);             
-            } else {
-                resolve(false);
+        for (var property of properties) {
+            if (property == null || typeof property != "object") {
+                continue;
+            }
+            var propertyName = property["name"];
+            if (typeof propertyName != "string" || propertyName == "") {
+                continue;
             }
 
-        });
-    });
+            var schema = ETL.render.normalizeSchema(property["schema"], propertyName);
+            var title = schema["title"] || "";
+            var description = schema["description"] || "";
+            var helper = ETL.render.schemaDescriptionHTML(description);
+            var nullableAttr = schema["nullable"] === true ? "data-nullable='true'" : "";
+
+            if (propertyName == contextFieldName) {
+                html += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + "<br><select class='formInput' name='" + propertyName + "' aria-label='" + ETL.render.escapeHTML(title) + "' data-context-selector='true' data-context-keys-endpoint='" + ETL.render.escapeHTML(contextKeysEndpoint) + "' " + nullableAttr + "><option value=''></option>";
+                var contextList = await ETL.api.get(currentServerID, contextSourceEndpoint);
+                if (Array.isArray(contextList)) {
+                    for (var context of contextList) {
+                        var contextID = context.id;
+                        var contextName = context.name;
+                        if (context.kind == "context") {
+                            var selected = selectedEditComponent.data[propertyName] == contextID ? "selected" : "";
+                            html += "<option value='" + ETL.render.escapeHTML(contextID) + "' " + selected + ">" + ETL.render.escapeHTML(contextName + (context.description ? " (" + context.description + ")" : "")) + "</option>";
+                        }
+                    }
+                }
+                html += "</select>" + helper + "</label>";
+                html += "<small class='fieldDescription'>Use <code>${ctx.key}</code> for environment-aware context values.</small>";
+                html += "<div class='contextTemplateAssist' data-context-assist-for='" + ETL.render.escapeHTML(propertyName) + "'><div class='contextTemplateKeys'></div></div>";
+                renderedFieldCount += 1;
+                continue;
+            }
+
+            if (propertyName == ruleFieldName) {
+                html += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + helper + "</label>";
+                html += "<button class='secondary btnAddSingleRule' style='margin-right: 10px;'><i class='fa-solid fa-plus'></i> Simple Rule</button>";
+                html += "<button class='secondary btnAddLogicalRule'><i class='fa-solid fa-plus'></i> Combined Rule</button>";
+                var ruleTableContent = ETL.render.propertyRuleToHTML(selectedEditComponent.data[propertyName]);
+                html += "<table id='ruleTable'>"+ruleTableContent+"</table>";
+                renderedFieldCount += 1;
+                continue;
+            }
+
+            if (portSchemaFields.indexOf(propertyName) >= 0) {
+                var portNames = [];
+                var classMeta = data["x-class"] || {};
+                if (propertyName.indexOf("out_port_") === 0 && Array.isArray(classMeta["output_port_names"])) {
+                    portNames = classMeta["output_port_names"];
+                } else if (propertyName.indexOf("in_port_") === 0 && Array.isArray(classMeta["input_port_names"])) {
+                    portNames = classMeta["input_port_names"];
+                }
+                portNames = Array.from(new Set(portNames));
+                if (propertyName.indexOf("out_port_") === 0 && Array.isArray(selectedEditComponent.data["extra_output_ports"])) {
+                    for (var extraOutputPort of selectedEditComponent.data["extra_output_ports"]) {
+                        var extraOutputPortName = "";
+                        if (typeof extraOutputPort == "string") {
+                            extraOutputPortName = extraOutputPort;
+                        } else if (extraOutputPort != null && typeof extraOutputPort == "object") {
+                            extraOutputPortName = String(extraOutputPort["name"] || "");
+                        }
+                        if (extraOutputPortName != "") {
+                            portNames.push(extraOutputPortName);
+                        }
+                    }
+                }
+                if (propertyName.indexOf("in_port_") === 0 && Array.isArray(selectedEditComponent.data["extra_input_ports"])) {
+                    for (var extraInputPort of selectedEditComponent.data["extra_input_ports"]) {
+                        var extraInputPortName = "";
+                        if (typeof extraInputPort == "string") {
+                            extraInputPortName = extraInputPort;
+                        } else if (extraInputPort != null && typeof extraInputPort == "object") {
+                            extraInputPortName = String(extraInputPort["name"] || "");
+                        }
+                        if (extraInputPortName != "") {
+                            portNames.push(extraInputPortName);
+                        }
+                    }
+                }
+                var existingSchemaMap = selectedEditComponent.data[propertyName];
+                if (existingSchemaMap != null && typeof existingSchemaMap == "object") {
+                    for (var schemaPortName in existingSchemaMap) {
+                        portNames.push(schemaPortName);
+                    }
+                }
+                portNames = Array.from(new Set(portNames));
+
+                html += "<label class='generatedField'>" + ETL.render.escapeHTML(title) + helper + "</label>";
+                html += "<table class='tablePortSchema' data-schema-field='"+propertyName+"'>";
+                for (var portName of portNames) {
+                    html += "<tr><td>"+portName+"</td>";
+                    html += "<td><button class='btnEditPortSchema secondary' data-schema-field='"+propertyName+"' data-port-name='"+portName+"'><i class='fa-solid fa-pencil'></i> Edit schema</button></td></tr>";
+                }
+                html += "</table>";
+                renderedFieldCount += 1;
+                continue;
+            }
+
+            // Section grouping: close previous and open new section if needed
+            if (uiSections.length > 0) {
+                var targetSection = fieldToSection[propertyName];
+                if (targetSection !== undefined && targetSection !== openSection) {
+                    if (openSection >= 0) {
+                        html += "</fieldset>";
+                    }
+                    var sectionLabel = uiSections[targetSection]["label"] || "Section";
+                    html += "<fieldset class='componentSection'><legend style='cursor:pointer;'>" + ETL.render.escapeHTML(sectionLabel) + "</legend>";
+                    openSection = targetSection;
+                } else if (targetSection === undefined && openSection >= 0) {
+                    html += "</fieldset>";
+                    openSection = -1;
+                }
+            }
+
+            html += ETL.render.propertyToHTML(property, selectedEditComponent.data[propertyName]);
+            renderedFieldCount += 1;
+        }
+
+        // Close any open section
+        if (openSection >= 0) {
+            html += "</fieldset>";
+        }
+
+        if (renderedFieldCount == 0) {
+            return "<div class='generatedField'>No configurable fields are available for this component schema.</div>";
+        }
+
+        return html;
+    } catch (error) {
+        return false;
+    }
 }
 
 
@@ -704,6 +1029,155 @@ ETL.util.alert = function(header = "Alert", message = "") {
     $("#alertDialog p").html(message);
 }
 
+ETL.util.applyComponentEditDialogResult = function(result) {
+    if (typeof result == "string" && result.trim() != "") {
+        $("#componentEditDialogMain").html(result);
+        $("#btnSaveComponent").attr("disabled", false);
+        return true;
+    }
+
+    $("#componentEditDialogMain").html("No Server connection!");
+    $("#btnSaveComponent").attr("disabled", true);
+    return false;
+}
+
+ETL.util.insertTextAtCursor = function(inputElement, text) {
+    if (inputElement == null || typeof inputElement.value != "string") {
+        return false;
+    }
+
+    var element = inputElement;
+    if (typeof element.selectionStart == "number" && typeof element.selectionEnd == "number") {
+        var start = element.selectionStart;
+        var end = element.selectionEnd;
+        element.value = element.value.slice(0, start) + text + element.value.slice(end);
+        element.selectionStart = start + text.length;
+        element.selectionEnd = start + text.length;
+    } else {
+        element.value += text;
+    }
+
+    if (typeof element.dispatchEvent == "function") {
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    return true;
+}
+
+ETL.util.initContextTemplateAssist = function(container, serverID) {
+    var rootElement = $(container);
+    if (rootElement.length == 0) {
+        return;
+    }
+
+    var localServerID = parseInt(serverID, 10);
+    if (Number.isNaN(localServerID)) {
+        localServerID = 0;
+    }
+
+    rootElement.off("focusin.contextAssist");
+    rootElement.on("focusin.contextAssist", ".formInput", function() {
+        rootElement.data("contextAssistFocusedInput", this);
+    });
+
+    rootElement.find("select[data-context-selector='true']").each(function() {
+        var selector = $(this);
+        var fieldName = selector.attr("name");
+        if (!fieldName) {
+            return;
+        }
+
+        var endpointBase = selector.attr("data-context-keys-endpoint") || "/contexts/";
+        var assistBox = rootElement.find("[data-context-assist-for='" + fieldName + "']");
+        var keysContainer = assistBox.find(".contextTemplateKeys");
+        if (keysContainer.length == 0) {
+            return;
+        }
+
+        function buildKeysEndpoint(contextID) {
+            var normalizedEndpoint = String(endpointBase || "").trim();
+            if (normalizedEndpoint == "") {
+                normalizedEndpoint = "/contexts/";
+            }
+            if (normalizedEndpoint.indexOf("{id}") >= 0) {
+                var replaced = normalizedEndpoint.replace("{id}", encodeURIComponent(contextID));
+                if (replaced.endsWith("/keys")) {
+                    return replaced;
+                }
+                return replaced.replace(/\/$/, "") + "/keys";
+            }
+            return normalizedEndpoint.replace(/\/$/, "") + "/" + encodeURIComponent(contextID) + "/keys";
+        }
+
+        function renderKeys(contextID) {
+            if (typeof contextID != "string" || contextID.trim() == "") {
+                keysContainer.html("<small class='fieldDescription'>Select a context to load available keys.</small>");
+                return;
+            }
+
+            ETL.api
+                .get(localServerID, buildKeysEndpoint(contextID))
+                .then(function(result) {
+                    if (result === false || result == null || !Array.isArray(result.keys)) {
+                        keysContainer.html("<small class='fieldDescription'>Unable to load context keys.</small>");
+                        return;
+                    }
+
+                    if (result.keys.length == 0) {
+                        keysContainer.html("<small class='fieldDescription'>No reusable keys available for this context.</small>");
+                        return;
+                    }
+
+                    var html = "<small class='fieldDescription'>Available keys:</small>";
+                    html += "<div class='contextTemplateTokens'>";
+                    var renderedTokenCount = 0;
+                    for (var item of result.keys) {
+                        var keyName = item.key;
+                        if (typeof keyName != "string" || keyName.trim() == "") {
+                            continue;
+                        }
+                        var token = "${ctx." + keyName + "}";
+                        var badge = item.secret === true ? " <small>(secret)</small>" : "";
+                        html += "<button type='button' class='outline secondary btnInsertContextToken' data-token='" + ETL.render.escapeHTML(token) + "'>" + ETL.render.escapeHTML(token) + badge + "</button>";
+                        renderedTokenCount += 1;
+                    }
+                    html += "</div>";
+                    if (renderedTokenCount == 0) {
+                        keysContainer.html("<small class='fieldDescription'>No reusable keys available for this context.</small>");
+                        return;
+                    }
+                    keysContainer.html(html);
+                })
+                .catch(function() {
+                    keysContainer.html("<small class='fieldDescription'>Unable to load context keys.</small>");
+                });
+        }
+
+        selector.off("change.contextAssist");
+        selector.on("change.contextAssist", function() {
+            renderKeys(String($(this).val() || ""));
+        });
+
+        renderKeys(String(selector.val() || ""));
+    });
+
+    rootElement.off("click.contextAssist");
+    rootElement.on("click.contextAssist", ".btnInsertContextToken", function() {
+        var token = $(this).attr("data-token") || "";
+        var focusedInput = rootElement.data("contextAssistFocusedInput");
+        if (!focusedInput) {
+            focusedInput = rootElement.find("input.formInput[type='text'], textarea.formInput").first()[0];
+        }
+        if (!focusedInput) {
+            return;
+        }
+        ETL.util.insertTextAtCursor(focusedInput, token);
+        if (typeof focusedInput.focus == "function") {
+            focusedInput.focus();
+        }
+    });
+}
+
 /**
  * Extracts form data from a DOM element containing form inputs
  * @param {jQuery|HTMLElement} element - The DOM element containing form inputs
@@ -713,20 +1187,120 @@ ETL.util.getFormData = function(element) {
     var postData = {};
     var newJobInput = $(element).find(".formInput");
     newJobInput.each(function(key, value) {
+        if (postData.__form_error__ === true) {
+            return;
+        }
         var type = $(value).attr("type");
+        var isNullable = $(value).attr("data-nullable") == "true";
         var postValue;
-        if (type == "checkbox") {
+        if ($(value).attr("data-json") == "true") {
+            var rawValue = $(value).val();
+            var valueString = typeof rawValue == "string" ? rawValue.trim() : "";
+            if (valueString == "") {
+                if (isNullable) {
+                    postValue = null;
+                } else {
+                    var jsonType = $(value).attr("data-json-type");
+                    valueString = jsonType == "array" ? "[]" : "{}";
+                }
+            }
+            if (postValue === undefined) {
+                try {
+                    postValue = JSON.parse(valueString);
+                    $(value).removeAttr("aria-invalid");
+                } catch (error) {
+                    $(value).attr("aria-invalid", "true");
+                    ETL.util.alert(
+                        "Invalid JSON",
+                        "Field <code>" +
+                            String($(value).attr("name") || "") +
+                            "</code> contains invalid JSON."
+                    );
+                    postData.__form_error__ = true;
+                    return;
+                }
+            }
+        } else if (type == "checkbox") {
             postValue = $(value).prop("checked");
         } else if (type == "number") {
-            postValue = parseFloat($(value).val());
+            var rawNumber = $(value).val();
+            var numberValue = typeof rawNumber == "string" ? rawNumber.trim() : String(rawNumber || "");
+            if (numberValue == "") {
+                postValue = isNullable ? null : undefined;
+            } else {
+                var numberKind = $(value).attr("data-number-kind");
+                if (numberKind == "integer") {
+                    postValue = parseInt(numberValue, 10);
+                } else {
+                    postValue = parseFloat(numberValue);
+                }
+                if (Number.isNaN(postValue)) {
+                    postValue = isNullable ? null : undefined;
+                }
+            }
         } else {
             postValue = $(value).val();
+            if (isNullable && postValue === "") {
+                postValue = null;
+            }
         }
-        if (postValue != undefined) {
+        if (postValue !== undefined) {
             postData[$(value).attr("name")] = postValue;
         }
     });
+    if (postData.__form_error__ === true) {
+        return false;
+    }
     return postData;
+}
+
+/**
+ * Component configuration UX event handlers
+ */
+/* istanbul ignore next: browser-only DOM event binding */
+if (typeof $ !== "undefined" && typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    // Format JSON button
+    $(document).on("click", ".btnFormatJson", function() {
+        var targetName = $(this).attr("data-target");
+        var textarea = $("textarea[name='" + targetName + "']");
+        if (textarea.length === 0) { return; }
+        var raw = textarea.val();
+        try {
+            var parsed = JSON.parse(raw);
+            textarea.val(JSON.stringify(parsed, null, 2));
+            textarea.removeClass("jsonInvalid");
+        } catch (e) {
+            textarea.addClass("jsonInvalid");
+        }
+    });
+
+    // JSON validation on blur
+    $(document).on("blur", "textarea.jsonInput", function() {
+        var raw = $(this).val().trim();
+        if (raw === "" && $(this).attr("data-nullable") === "true") {
+            $(this).removeClass("jsonInvalid");
+            return;
+        }
+        try {
+            JSON.parse(raw);
+            $(this).removeClass("jsonInvalid");
+        } catch (e) {
+            $(this).addClass("jsonInvalid");
+        }
+    });
+
+    // Clear nullable field
+    $(document).on("click", ".btnClearNullable", function() {
+        var targetName = $(this).attr("data-target");
+        var field = $(".formInput[name='" + targetName + "']");
+        if (field.is("textarea")) {
+            field.val("");
+        } else if (field.is("select")) {
+            field.val("");
+        } else {
+            field.val("");
+        }
+    });
 }
 
 /**
@@ -738,6 +1312,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = ETL;
 }
 
+/* istanbul ignore next: browser-only auto bootstrap path */
 if (typeof window !== "undefined" && (typeof module === "undefined" || !module.exports)) {
     ETL.contract.bootstrap();
 }
